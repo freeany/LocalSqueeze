@@ -1,48 +1,202 @@
 @import "tailwindcss";
 
+/* 全局样式，防止滚动条出现 */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 215 25% 27%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 27%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --popover-foreground: 215 25% 27%;
+    --primary: 199 89% 48%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --secondary: 199 89% 94%;
+    --secondary-foreground: 199 89% 30%;
+    --muted: 199 60% 94%;
+    --muted-foreground: 215 20% 50%;
+    --accent: 199 89% 97%;
+    --accent-foreground: 199 89% 30%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --border: 199 60% 90%;
+    --input: 199 60% 90%;
+    --ring: 199 89% 48%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 215 32% 10%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 215 32% 12%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 215 32% 12%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 199 50% 20%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 199 50% 15%;
+    --muted-foreground: 215 20% 70%;
+    --accent: 199 50% 20%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.5% 48%;
+    --border: 199 50% 20%;
+    --input: 199 50% 20%;
+    --ring: 199 89% 48%;
+  }
+}
+
+/* 添加直接的颜色类覆盖 */
+/* 主色 */
+.bg-primary {
+  background-color: #0ea5e9 !important; /* 蓝色 */
+}
+
+.text-primary {
+  color: #0ea5e9 !important; /* 蓝色 */
+}
+
+.border-primary {
+  border-color: #0ea5e9 !important; /* 蓝色 */
+}
+
+.bg-primary\/10 {
+  background-color: rgba(14, 165, 233, 0.1) !important;
+}
+
+.bg-primary\/90 {
+  background-color: rgba(14, 165, 233, 0.9) !important;
+}
+
+.hover\:bg-primary\/90:hover {
+  background-color: rgba(14, 165, 233, 0.9) !important;
+}
+
+.hover\:bg-primary\/10:hover {
+  background-color: rgba(14, 165, 233, 0.1) !important;
+}
+
+.hover\:border-primary:hover {
+  border-color: #0ea5e9 !important;
+}
+
+.hover\:border-primary\/50:hover {
+  border-color: rgba(14, 165, 233, 0.5) !important;
+}
+
+/* 次要颜色 */
+.bg-secondary {
+  background-color: #bae6fd !important; /* 浅蓝色 */
+}
+
+.text-secondary {
+  color: #0369a1 !important; /* 深蓝色 */
+}
+
+/* 强调色 */
+.bg-accent {
+  background-color: #e0f2fe !important; /* 非常浅的蓝色 */
+}
+
+.bg-accent\/30 {
+  background-color: rgba(224, 242, 254, 0.3) !important;
+}
+
+.hover\:bg-accent:hover {
+  background-color: #e0f2fe !important;
+}
+
+.hover\:bg-accent\/30:hover {
+  background-color: rgba(224, 242, 254, 0.3) !important;
+}
+
+/* 文本颜色 */
+.text-foreground {
+  color: #1e293b !important; /* 深灰色 */
+}
+
+.text-primary-foreground {
+  color: #f8fafc !important; /* 白色 */
+}
+
+.text-muted-foreground {
+  color: #64748b !important; /* 中灰色 */
+}
+
+/* 背景颜色 */
+.bg-background {
+  background-color: #ffffff !important; /* 白色 */
+}
+
+.bg-card {
+  background-color: #ffffff !important; /* 白色 */
+}
+
+.bg-muted {
+  background-color: #bae6fd !important; /* 浅蓝色 */
+}
+
+/* 边框颜色 */
+.border-border {
+  border-color: #cbd5e1 !important; /* 浅灰色 */
+}
+
+/* 暗色模式覆盖 */
+.dark .bg-background {
+  background-color: #0f172a !important; /* 深蓝黑色 */
+}
+
+.dark .text-foreground {
+  color: #f8fafc !important; /* 白色 */
+}
+
+.dark .bg-card {
+  background-color: #1e293b !important; /* 深灰蓝色 */
+}
+
+.dark .border-border {
+  border-color: #334155 !important; /* 中灰色 */
+}
+
+.dark .text-muted-foreground {
+  color: #94a3b8 !important; /* 浅灰色 */
+}
+
+.dark .bg-accent {
+  background-color: #0c4a6e !important; /* 深蓝色 */
+}
+
+.dark .bg-accent\/30 {
+  background-color: rgba(12, 74, 110, 0.3) !important;
+}
+
+@layer utilities {
+  .animate-fadeIn {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
