@@ -91,3 +91,6 @@ typings/
 # Electron-Forge
 out/
 node_modules
+
+/docs
+/prototype

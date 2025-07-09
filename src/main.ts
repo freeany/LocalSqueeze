@@ -14,6 +14,10 @@ const createWindow = () => {
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      // 添加以下配置以禁用自动填充功能
+      spellcheck: false,
+      // 确保上下文隔离
+      contextIsolation: true,
     },
   });
 
