@@ -41,8 +41,32 @@ const compressionAPI = {
   }
 };
 
+// 统计数据API
+const statsAPI = {
+  // 获取统计数据
+  getStats: () => {
+    return ipcRenderer.invoke('get-stats');
+  },
+  
+  // 获取最近处理的图片
+  getRecentImages: (limit = 10) => {
+    return ipcRenderer.invoke('get-recent-images', limit);
+  },
+  
+  // 添加处理记录
+  addProcessedImage: (image: any) => {
+    return ipcRenderer.invoke('add-processed-image', image);
+  },
+  
+  // 清除所有统计数据
+  clearAllData: () => {
+    return ipcRenderer.invoke('clear-stats-data');
+  }
+};
+
 // 暴露API到渲染进程
 contextBridge.exposeInMainWorld('compression', compressionAPI);
+contextBridge.exposeInMainWorld('stats', statsAPI);
 
 // 定义有效的IPC通道
 const validChannels = [
@@ -58,7 +82,12 @@ const validChannels = [
   'get-image-data-url',
   'save-file',
   'open-file',
-  'export-all-files'
+  'show-item-in-folder',
+  'export-all-files',
+  'get-stats',
+  'get-recent-images',
+  'add-processed-image',
+  'clear-stats-data'
 ];
 
 // 暴露IPC通信API

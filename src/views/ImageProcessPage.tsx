@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Upload, Download, Eye } from 'lucide-react';
-import { CompressionSettings, CompressionResult } from '../server/compression';
 import { formatFileSize, calculateCompressionRate } from '../lib/utils';
+import { CompressionSettings, CompressionResult, ProcessedImage } from '../types/global';
 
 // 声明全局window接口，添加electron和compression属性
 declare global {
@@ -19,9 +19,24 @@ declare global {
       batchCompressImages: (imagePaths: string[], settings: any, outputDir?: string) => Promise<any>;
       convertToWebp: (imagePath: string, settings: any, outputPath?: string) => Promise<any>;
       getCompressionPreset: (presetName: string) => Promise<any>;
-      selectOutputDirectory: () => Promise<any>;
+      selectOutputDirectory: () => Promise<string | undefined>;
       clearTempFiles: () => Promise<any>;
       onCompressionProgress: (callback: (data: any) => void) => () => void;
+    };
+    stats: {
+      addProcessedImage: (image: {
+        id: string;
+        name: string;
+        originalPath: string;
+        outputPath: string;
+        originalSize: number;
+        compressedSize: number;
+        compressionRate: string;
+        width: number;
+        height: number;
+        format: string;
+        processedAt: number;
+      }) => Promise<any>;
     };
   }
 }
@@ -175,7 +190,7 @@ export default function ImageProcessPage() {
                   }
                 } catch (error) {
                   console.error(`保存文件 ${file.name} 失败:`, error);
-                  resolve({ path: '', error: `保存文件失败: ${error.message || '未知错误'}` });
+                  resolve({ path: '', error: `保存文件失败: ${error instanceof Error ? error.message : '未知错误'}` });
                 }
               };
               
@@ -186,7 +201,7 @@ export default function ImageProcessPage() {
               reader.readAsArrayBuffer(file);
             } catch (error) {
               console.error(`处理文件 ${file.name} 时出错:`, error);
-              resolve({ path: '', error: `处理文件失败: ${error.message || '未知错误'}` });
+              resolve({ path: '', error: `处理文件失败: ${error instanceof Error ? error.message : '未知错误'}` });
             }
           })
         );
@@ -209,22 +224,51 @@ export default function ImageProcessPage() {
         throw new Error('没有有效的文件可以处理');
       }
       
-      // 使用compression API批量压缩图片
-      let result;
+      // 使用compression API压缩图片
+      let result: {
+        success: boolean;
+        results: CompressionResult[];
+        error?: string;
+      };
+      
       try {
         if (window.compression) {
-          // 使用compression API
-          result = await window.compression.batchCompressImages(validPaths, compressionSettings);
+          // 根据文件数量决定使用单张处理还是批量处理
+          if (validPaths.length === 1) {
+            // 单张图片处理 - 直接保存到临时目录
+            const singleResult = await window.compression.compressImage(validPaths[0], compressionSettings);
+            // 将单个结果转换为与批量处理相同的格式
+            result = {
+              success: true,
+              results: [singleResult]
+            };
+          } else {
+            // 批量处理 - 保存到子文件夹
+            result = await window.compression.batchCompressImages(validPaths, compressionSettings);
+          }
         } else {
           // 使用通用IPC调用
-          result = await window.electron.ipcRenderer.invoke('batch-compress-images', {
-            imagePaths: validPaths,
-            settings: compressionSettings
-          });
+          if (validPaths.length === 1) {
+            // 单张图片处理
+            const singleResult = await window.electron.ipcRenderer.invoke('compress-image', {
+              imagePath: validPaths[0],
+              settings: compressionSettings
+            });
+            result = {
+              success: true,
+              results: [singleResult]
+            };
+          } else {
+            // 批量处理
+            result = await window.electron.ipcRenderer.invoke('batch-compress-images', {
+              imagePaths: validPaths,
+              settings: compressionSettings
+            });
+          }
         }
       } catch (error) {
         console.error('压缩图片失败:', error);
-        throw new Error(`压缩图片失败: ${error.message || '未知错误'}`);
+        throw new Error(`压缩图片失败: ${error instanceof Error ? error.message : '未知错误'}`);
       }
       
       if (result && result.success) {
@@ -233,6 +277,25 @@ export default function ImageProcessPage() {
           try {
             // 获取本地图片URL
             const imageUrl = await window.electron.ipcRenderer.invoke('get-image-data-url', item.outputPath);
+            
+            // 添加处理记录到统计数据
+            try {
+              await window.stats.addProcessedImage({
+                id: Math.random().toString(36).substr(2, 9),
+                name: getBasename(item.originalPath),
+                originalPath: item.originalPath,
+                outputPath: item.outputPath,
+                originalSize: item.originalSize,
+                compressedSize: item.compressedSize,
+                compressionRate: item.compressionRate,
+                width: item.width,
+                height: item.height,
+                format: item.outputFormat,
+                processedAt: Date.now()
+              });
+            } catch (error) {
+              console.error('添加处理记录失败:', error);
+            }
             
             return {
               id: Math.random().toString(36).substr(2, 9),
@@ -260,7 +323,7 @@ export default function ImageProcessPage() {
               savingRate: item.compressionRate,
               status: 'error',
               outputPath: item.outputPath,
-              error: `处理结果失败: ${error.message || '未知错误'}`
+              error: `处理结果失败: ${error instanceof Error ? error.message : '未知错误'}`
             };
           }
         }));
@@ -293,7 +356,7 @@ export default function ImageProcessPage() {
       }
     } catch (error) {
       console.error('处理图片时出错:', error);
-      alert(`处理图片时出错: ${error.message || '未知错误'}\n请查看控制台获取详细信息`);
+      alert(`处理图片时出错: ${error instanceof Error ? error.message : '未知错误'}\n请查看控制台获取详细信息`);
     } finally {
       // 重置处理状态
       setIsProcessing(false);
@@ -332,7 +395,7 @@ export default function ImageProcessPage() {
   const exportAllFiles = async () => {
     try {
       // 选择保存目录
-      let outputDir;
+      let outputDir: string | undefined;
       if (window.compression) {
         outputDir = await window.compression.selectOutputDirectory();
       } else {

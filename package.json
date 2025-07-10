@@ -1,8 +1,8 @@
 {
   "name": "imgs-compress",
-  "productName": "imgs-compress",
+  "productName": "图片压缩工具",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "高效的图片压缩和格式转换工具，保持图片质量的同时减小文件大小",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
@@ -37,6 +37,7 @@
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.21",
     "electron": "^37.2.0",
+    "electron-icon-builder": "^2.0.1",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
     "postcss": "^8.5.6",

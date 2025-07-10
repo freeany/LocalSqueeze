@@ -4,7 +4,7 @@ import started from 'electron-squirrel-startup';
 import fs from 'fs/promises';
 import { existsSync } from 'fs'; // 添加同步版本的fs
 import os from 'os';
-import { initCompressionHandlers } from './server/ipc/compression-handler';
+import { initAllHandlers } from './server/ipc';
 import { URL } from 'url';
 
 // 临时目录路径
@@ -29,6 +29,7 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    icon: path.join(__dirname, '../assets/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       // 添加以下配置以禁用自动填充功能
@@ -56,7 +57,7 @@ const createWindow = () => {
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   await ensureTempDir();
-  initCompressionHandlers();
+  initAllHandlers(); // 初始化所有IPC处理程序
   
   // 注册自定义协议，用于安全地加载本地文件
   protocol.registerFileProtocol('app-image', (request, callback) => {
@@ -198,6 +199,18 @@ app.on('ready', async () => {
       return { success: true };
     } catch (error) {
       console.error('打开文件失败:', error);
+      return { success: false, error: error.message };
+    }
+  });
+  
+  // 注册在文件管理器中显示文件的处理程序
+  ipcMain.handle('show-item-in-folder', async (_, filePath) => {
+    try {
+      // 使用shell.showItemInFolder在文件管理器中显示文件
+      shell.showItemInFolder(filePath);
+      return { success: true };
+    } catch (error) {
+      console.error('在文件管理器中显示文件失败:', error);
       return { success: false, error: error.message };
     }
   });
