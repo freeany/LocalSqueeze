@@ -3,54 +3,6 @@ import { Upload, Sliders, Images, Package, Search, Repeat, Smartphone, Lock, Fil
 import { Link } from 'react-router-dom';
 
 export default function HomePage() {
-  // 模拟统计数据
-  const stats = {
-    processedImages: 128,
-    savedSpace: '256 MB',
-    compressionRate: '72%',
-    todayProcessed: 10
-  };
-
-  // 模拟最近处理的图片
-  const recentImages = [
-    {
-      id: 1,
-      name: 'vacation-photo.jpg',
-      thumbnail: 'https://via.placeholder.com/60',
-      originalSize: '2.5 MB',
-      compressedSize: '650 KB',
-      compressionRate: '74%',
-      date: '今天 14:30'
-    },
-    {
-      id: 2,
-      name: 'product-image.png',
-      thumbnail: 'https://via.placeholder.com/60',
-      originalSize: '1.8 MB',
-      compressedSize: '420 KB',
-      compressionRate: '77%',
-      date: '今天 13:15'
-    },
-    {
-      id: 3,
-      name: 'screenshot.jpg',
-      thumbnail: 'https://via.placeholder.com/60',
-      originalSize: '1.2 MB',
-      compressedSize: '350 KB',
-      compressionRate: '71%',
-      date: '昨天 18:45'
-    },
-    {
-      id: 4,
-      name: 'logo-design.png',
-      thumbnail: 'https://via.placeholder.com/60',
-      originalSize: '2.2 MB',
-      compressedSize: '580 KB',
-      compressionRate: '74%',
-      date: '昨天 16:20'
-    }
-  ];
-
   return (
     <div className="space-y-8 animate-fadeIn pb-8">
       {/* 欢迎区域 */}
@@ -59,25 +11,6 @@ export default function HomePage() {
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
           简单高效的图片压缩解决方案，帮助您减小图片文件大小，同时保持良好的图像质量
         </p>
-      </div>
-      
-      {/* 上传区域 */}
-      <div className="border-2 border-dashed border-border rounded-xl p-10 text-center bg-card hover:border-primary hover:bg-accent/30 transition-all duration-300 cursor-pointer">
-        <div className="flex flex-col items-center justify-center gap-4">
-          <div className="p-4 bg-primary/10 rounded-full">
-            <Upload className="h-10 w-10 text-primary" />
-          </div>
-          <p className="text-lg text-foreground">拖放图片到这里，或点击选择文件</p>
-          <Link 
-            to="/upload" 
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
-          >
-            图片处理
-          </Link>
-          <p className="text-sm text-muted-foreground mt-2">
-            支持 JPG、PNG、GIF、WebP 等格式
-          </p>
-        </div>
       </div>
       
       {/* 功能特点 */}
@@ -155,59 +88,6 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-        </div>
-      </div>
-      
-      {/* 使用统计 */}
-      <div className="mt-10 bg-accent/50 rounded-xl p-6">
-        <h3 className="text-xl font-semibold mb-4 text-foreground">使用统计</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-background rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-primary">{stats.processedImages}</div>
-            <div className="text-sm text-muted-foreground">已处理图片</div>
-          </div>
-          <div className="bg-background rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-primary">{stats.savedSpace}</div>
-            <div className="text-sm text-muted-foreground">节省空间</div>
-          </div>
-          <div className="bg-background rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-primary">{stats.compressionRate}</div>
-            <div className="text-sm text-muted-foreground">平均压缩率</div>
-          </div>
-          <div className="bg-background rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-primary">{stats.todayProcessed}</div>
-            <div className="text-sm text-muted-foreground">今日处理</div>
-          </div>
-        </div>
-      </div>
-      
-      {/* 最近处理 */}
-      <div className="mt-10">
-        <h3 className="text-xl font-semibold mb-4 text-foreground">最近处理</h3>
-        <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
-          {recentImages.map((image) => (
-            <div key={image.id} className="flex items-center p-4 border-b border-border last:border-b-0 hover:bg-accent/30 transition-colors">
-              <img 
-                src={image.thumbnail} 
-                alt={image.name} 
-                className="w-12 h-12 object-cover rounded-md mr-4" 
-              />
-              <div className="flex-1">
-                <div className="font-medium text-foreground">{image.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {image.originalSize} → {image.compressedSize} (-{image.compressionRate}) · {image.date}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button className="px-3 py-1 text-xs border border-border rounded hover:bg-accent transition-colors text-foreground">
-                  重新处理
-                </button>
-                <button className="px-3 py-1 text-xs border border-border rounded hover:bg-accent transition-colors text-foreground">
-                  打开位置
-                </button>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
       

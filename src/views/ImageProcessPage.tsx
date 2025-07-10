@@ -1,97 +1,86 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, Upload, Download, Eye } from 'lucide-react';
+import { CompressionSettings, CompressionResult } from '../server/compression';
+import { formatFileSize, calculateCompressionRate } from '../lib/utils';
+
+// 声明全局window接口，添加electron和compression属性
+declare global {
+  interface Window {
+    electron: {
+      ipcRenderer: {
+        invoke: (channel: string, ...args: any[]) => Promise<any>;
+        on: (channel: string, func: (...args: any[]) => void) => void;
+        removeListener: (channel: string, func: (...args: any[]) => void) => void;
+        removeAllListeners: (channel: string) => void;
+      };
+    };
+    compression: {
+      compressImage: (imagePath: string, settings: any, outputPath?: string) => Promise<any>;
+      batchCompressImages: (imagePaths: string[], settings: any, outputDir?: string) => Promise<any>;
+      convertToWebp: (imagePath: string, settings: any, outputPath?: string) => Promise<any>;
+      getCompressionPreset: (presetName: string) => Promise<any>;
+      selectOutputDirectory: () => Promise<any>;
+      clearTempFiles: () => Promise<any>;
+      onCompressionProgress: (callback: (data: any) => void) => () => void;
+    };
+  }
+}
+
+// 获取文件名（替代path.basename）
+function getBasename(filepath: string): string {
+  return filepath.split(/[\\/]/).pop() || '';
+}
 
 export default function ImageProcessPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [processedFiles, setProcessedFiles] = useState<any[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState<{current: number, total: number}>({ current: 0, total: 0 });
+  const [stats, setStats] = useState({
+    originalSize: '0 MB',
+    processedSize: '0 MB',
+    savedSpace: '0 MB',
+    savingRate: '0%',
+    processStatus: '0/0'
+  });
   
-  // 模拟初始文件数据
-  const mockInitialFiles = [
-    {
-      name: 'vacation-photo.jpg',
-      size: 2.5 * 1024 * 1024, // 2.5 MB
-      type: 'image/jpeg',
-      lastModified: Date.now()
-    },
-    {
-      name: 'product-image.png',
-      size: 1.8 * 1024 * 1024, // 1.8 MB
-      type: 'image/png',
-      lastModified: Date.now()
-    },
-    {
-      name: 'screenshot.jpg',
-      size: 1.2 * 1024 * 1024, // 1.2 MB
-      type: 'image/jpeg',
-      lastModified: Date.now()
-    }
-  ];
+  // 跟踪未处理的文件
+  const [processedFileNames, setProcessedFileNames] = useState<Set<string>>(new Set());
   
-  // 模拟处理后的文件
-  const mockProcessedFiles = [
-    {
-      id: 1,
-      name: 'vacation-photo.jpg',
-      thumbnail: 'https://via.placeholder.com/60',
-      originalSize: '2.5 MB',
-      compressedSize: '650 KB',
-      dimensions: '1920×1080',
-      format: 'JPG',
-      savingRate: '74%',
-      status: 'completed'
-    },
-    {
-      id: 2,
-      name: 'product-image.png',
-      thumbnail: 'https://via.placeholder.com/60',
-      originalSize: '1.8 MB',
-      compressedSize: '420 KB',
-      dimensions: '1200×800',
-      format: 'PNG',
-      savingRate: '77%',
-      status: 'completed'
-    },
-    {
-      id: 3,
-      name: 'screenshot.jpg',
-      thumbnail: 'https://via.placeholder.com/60',
-      originalSize: '1.2 MB',
-      dimensions: '1600×900',
-      format: 'JPG',
-      status: 'processing'
-    }
-  ];
-
-  // 初始化模拟数据
+  // 计算是否有未处理的文件
+  const hasUnprocessedFiles = useMemo(() => {
+    return files.some(file => !processedFileNames.has(file.name));
+  }, [files, processedFileNames]);
+  
+  // 初始化压缩设置
+  const [compressionSettings, setCompressionSettings] = useState<CompressionSettings>({
+    quality: 70,
+    keepDimensions: true,
+    keepFormat: true,
+    removeMetadata: true,
+    optimizeColors: false,
+    progressive: false
+  });
+  
+  // 监听压缩进度更新
   useEffect(() => {
-    // 创建模拟文件对象
-    const initialFiles = mockInitialFiles.map(mockFile => {
-      // 创建 Blob 对象
-      const blob = new Blob(['mock file content'], { type: mockFile.type });
-      
-      // 使用 File 构造函数创建文件对象
-      return new File([blob], mockFile.name, {
-        type: mockFile.type,
-        lastModified: mockFile.lastModified
+    let removeListener: (() => void) | undefined;
+    
+    if (window.compression) {
+      removeListener = window.compression.onCompressionProgress((data) => {
+        setProcessingProgress({ current: data.current, total: data.total });
       });
-    });
+    }
     
-    // 设置初始文件
-    setFiles(initialFiles);
-    
-    // 设置上传进度
-    const initialProgress: {[key: string]: number} = {};
-    initialFiles.forEach(file => {
-      initialProgress[file.name] = 100; // 已完成上传
-    });
-    setUploadProgress(initialProgress);
-    
-    // 默认显示处理结果
-    setProcessedFiles(mockProcessedFiles);
+    // 组件卸载时移除监听
+    return () => {
+      if (removeListener) {
+        removeListener();
+      }
+    };
   }, []);
-
+  
   // 处理文件拖放
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -112,15 +101,7 @@ export default function ImageProcessPage() {
         file => file.type.startsWith('image/')
       );
       
-      // 为每个新文件设置初始上传进度
-      const newProgress = {...uploadProgress};
-      droppedFiles.forEach(file => {
-        newProgress[file.name] = 0;
-        // 模拟上传进度
-        simulateUploadProgress(file.name);
-      });
-      
-      setUploadProgress(newProgress);
+      // 直接添加文件，不模拟上传进度
       setFiles(prevFiles => [...prevFiles, ...droppedFiles]);
     }
   };
@@ -132,69 +113,191 @@ export default function ImageProcessPage() {
         file => file.type.startsWith('image/')
       );
       
-      // 为每个新文件设置初始上传进度
-      const newProgress = {...uploadProgress};
-      selectedFiles.forEach(file => {
-        newProgress[file.name] = 0;
-        // 模拟上传进度
-        simulateUploadProgress(file.name);
-      });
-      
-      setUploadProgress(newProgress);
+      // 直接添加文件，不模拟上传进度
       setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
     }
   };
   
-  // 模拟上传进度
-  const simulateUploadProgress = (fileName: string) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 15;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-      }
-      
-      setUploadProgress(prev => ({
-        ...prev,
-        [fileName]: progress
-      }));
-    }, 300);
-  };
-
   // 删除文件
   const removeFile = (index: number) => {
-    const fileToRemove = files[index];
-    if (fileToRemove) {
-      // 移除该文件的上传进度
-      const newProgress = {...uploadProgress};
-      delete newProgress[fileToRemove.name];
-      setUploadProgress(newProgress);
-    }
-    
     setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
   };
 
   // 清除所有文件
   const clearAllFiles = () => {
     setFiles([]);
-    setUploadProgress({});
+    setProcessedFiles([]);
+    setProcessedFileNames(new Set());
   };
 
   // 处理图片
-  const processImages = () => {
-    // 在实际应用中，这里应该调用图片压缩API
-    // 这里使用模拟数据
-    setProcessedFiles(mockProcessedFiles);
-  };
-
-  // 计算处理统计
-  const stats = {
-    originalSize: '5.5 MB',
-    processedSize: '1.1 MB',
-    savedSpace: '4.4 MB',
-    savingRate: '80%',
-    processStatus: '2/3'
+  const processImages = async () => {
+    // 检查是否有文件需要处理
+    if (files.length === 0) {
+      alert('请先上传图片再进行处理');
+      return;
+    }
+    
+    // 检查是否有未处理的文件
+    const unprocessedFiles = files.filter(file => !processedFileNames.has(file.name));
+    if (unprocessedFiles.length === 0) {
+      alert('所有文件已处理完成');
+      return;
+    }
+    
+    // 设置处理状态
+    setIsProcessing(true);
+    setProcessingProgress({ current: 0, total: unprocessedFiles.length });
+    
+    try {
+      // 将File对象转换为临时文件路径
+      const filePaths: string[] = [];
+      const fileReaders: Promise<{path: string, error?: string}>[] = [];
+      
+      // 创建文件读取Promise，只处理未处理的文件
+      for (const file of unprocessedFiles) {
+        fileReaders.push(
+          new Promise<{path: string, error?: string}>((resolve) => {
+            try {
+              const reader = new FileReader();
+              
+              reader.onload = async (e) => {
+                try {
+                  if (e.target && e.target.result) {
+                    // 将文件内容发送到主进程，保存为临时文件
+                    const tempPath = await window.electron.ipcRenderer.invoke('save-temp-file', {
+                      filename: file.name,
+                      data: e.target.result
+                    });
+                    resolve({ path: tempPath });
+                  } else {
+                    resolve({ path: '', error: '读取文件内容失败' });
+                  }
+                } catch (error) {
+                  console.error(`保存文件 ${file.name} 失败:`, error);
+                  resolve({ path: '', error: `保存文件失败: ${error.message || '未知错误'}` });
+                }
+              };
+              
+              reader.onerror = () => {
+                resolve({ path: '', error: `读取文件 ${file.name} 失败` });
+              };
+              
+              reader.readAsArrayBuffer(file);
+            } catch (error) {
+              console.error(`处理文件 ${file.name} 时出错:`, error);
+              resolve({ path: '', error: `处理文件失败: ${error.message || '未知错误'}` });
+            }
+          })
+        );
+      }
+      
+      // 等待所有文件读取完成
+      const results = await Promise.all(fileReaders);
+      
+      // 检查是否有错误
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) {
+        console.error('部分文件处理失败:', errors);
+        alert(`部分文件处理失败:\n${errors.map(e => e.error).join('\n')}`);
+      }
+      
+      // 过滤出成功的路径
+      const validPaths = results.filter(r => r.path).map(r => r.path);
+      
+      if (validPaths.length === 0) {
+        throw new Error('没有有效的文件可以处理');
+      }
+      
+      // 使用compression API批量压缩图片
+      let result;
+      try {
+        if (window.compression) {
+          // 使用compression API
+          result = await window.compression.batchCompressImages(validPaths, compressionSettings);
+        } else {
+          // 使用通用IPC调用
+          result = await window.electron.ipcRenderer.invoke('batch-compress-images', {
+            imagePaths: validPaths,
+            settings: compressionSettings
+          });
+        }
+      } catch (error) {
+        console.error('压缩图片失败:', error);
+        throw new Error(`压缩图片失败: ${error.message || '未知错误'}`);
+      }
+      
+      if (result && result.success) {
+        // 处理压缩结果
+        const processed = await Promise.all(result.results.map(async (item: CompressionResult) => {
+          try {
+            // 获取本地图片URL
+            const imageUrl = await window.electron.ipcRenderer.invoke('get-image-data-url', item.outputPath);
+            
+            return {
+              id: Math.random().toString(36).substr(2, 9),
+              name: getBasename(item.originalPath),
+              thumbnail: imageUrl, // 使用data URL
+              originalSize: formatFileSize(item.originalSize),
+              compressedSize: formatFileSize(item.compressedSize),
+              dimensions: `${item.width}×${item.height}`,
+              format: item.outputFormat.toUpperCase(),
+              savingRate: item.compressionRate,
+              status: 'completed',
+              outputPath: item.outputPath
+            };
+          } catch (error) {
+            console.error(`处理结果 ${item.originalPath} 失败:`, error);
+            // 返回带有错误状态的结果
+            return {
+              id: Math.random().toString(36).substr(2, 9),
+              name: getBasename(item.originalPath),
+              thumbnail: '',
+              originalSize: formatFileSize(item.originalSize),
+              compressedSize: formatFileSize(item.compressedSize),
+              dimensions: `${item.width}×${item.height}`,
+              format: item.outputFormat.toUpperCase(),
+              savingRate: item.compressionRate,
+              status: 'error',
+              outputPath: item.outputPath,
+              error: `处理结果失败: ${error.message || '未知错误'}`
+            };
+          }
+        }));
+        
+        // 更新处理后的文件列表
+        setProcessedFiles(prev => [...prev, ...processed]);
+        
+        // 更新已处理的文件名集合
+        const newProcessedNames = new Set(processedFileNames);
+        unprocessedFiles.forEach(file => {
+          newProcessedNames.add(file.name);
+        });
+        setProcessedFileNames(newProcessedNames);
+        
+        // 计算统计数据
+        const totalOriginalSize = result.results.reduce((sum: number, item: CompressionResult) => sum + item.originalSize, 0);
+        const totalCompressedSize = result.results.reduce((sum: number, item: CompressionResult) => sum + item.compressedSize, 0);
+        const savedSpace = totalOriginalSize - totalCompressedSize;
+        
+        // 更新统计信息
+        setStats({
+          originalSize: formatFileSize(totalOriginalSize),
+          processedSize: formatFileSize(totalCompressedSize),
+          savedSpace: formatFileSize(savedSpace),
+          savingRate: calculateCompressionRate(totalOriginalSize, totalCompressedSize),
+          processStatus: `${newProcessedNames.size}/${files.length}`
+        });
+      } else {
+        throw new Error(`处理失败: ${result?.error || '未知错误'}`);
+      }
+    } catch (error) {
+      console.error('处理图片时出错:', error);
+      alert(`处理图片时出错: ${error.message || '未知错误'}\n请查看控制台获取详细信息`);
+    } finally {
+      // 重置处理状态
+      setIsProcessing(false);
+    }
   };
 
   // 获取文件扩展名
@@ -204,13 +307,51 @@ export default function ImageProcessPage() {
 
   // 获取文件缩略图
   const getFileThumbnail = (file: File) => {
-    // 对于真实文件，可以使用 URL.createObjectURL
-    // 对于模拟文件，使用占位图
-    if (file.size > 100) { // 真实文件通常大于100字节
-      return URL.createObjectURL(file);
+    return URL.createObjectURL(file);
+  };
+  
+  // 下载处理后的文件
+  const downloadFile = async (outputPath: string, fileName: string) => {
+    try {
+      await window.electron.ipcRenderer.invoke('save-file', {
+        sourcePath: outputPath,
+        suggestedName: fileName
+      });
+    } catch (error) {
+      console.error('下载文件失败:', error);
+      alert('下载文件失败');
     }
-    // 对于模拟文件，返回占位图
-    return `https://via.placeholder.com/60/cccccc?text=${getFileExtension(file.name)}`;
+  };
+  
+  // 预览文件
+  const previewFile = (outputPath: string) => {
+    window.electron.ipcRenderer.invoke('open-file', outputPath);
+  };
+  
+  // 导出全部文件
+  const exportAllFiles = async () => {
+    try {
+      // 选择保存目录
+      let outputDir;
+      if (window.compression) {
+        outputDir = await window.compression.selectOutputDirectory();
+      } else {
+        outputDir = await window.electron.ipcRenderer.invoke('select-output-directory');
+      }
+      
+      if (outputDir) {
+        // 导出所有文件
+        await window.electron.ipcRenderer.invoke('export-all-files', {
+          files: processedFiles.map(file => file.outputPath),
+          outputDir
+        });
+        
+        alert(`文件已成功导出到: ${outputDir}`);
+      }
+    } catch (error) {
+      console.error('导出文件失败:', error);
+      alert('导出文件失败');
+    }
   };
 
   return (
@@ -298,15 +439,6 @@ export default function ImageProcessPage() {
                         <div className="text-xs text-muted-foreground">
                           {(file.size / (1024 * 1024)).toFixed(2)} MB · {getFileExtension(file.name)}
                         </div>
-                        {/* 上传进度条 */}
-                        {uploadProgress[file.name] < 100 && (
-                          <div className="h-1.5 bg-muted mt-1.5 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-primary rounded-full" 
-                              style={{ width: `${uploadProgress[file.name]}%` }}
-                            ></div>
-                          </div>
-                        )}
                       </div>
                       <button 
                         onClick={() => removeFile(index)}
@@ -326,7 +458,10 @@ export default function ImageProcessPage() {
             <div className="bg-card border border-border rounded-xl shadow-sm p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-foreground">处理结果</h2>
-                <button className="px-4 py-2 text-sm bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors flex items-center gap-2">
+                <button 
+                  onClick={exportAllFiles}
+                  className="px-4 py-2 text-sm bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors flex items-center gap-2"
+                >
                   <Download className="h-4 w-4" />
                   导出全部
                 </button>
@@ -335,11 +470,26 @@ export default function ImageProcessPage() {
               <div className="space-y-3">
                 {processedFiles.map((file) => (
                   <div key={file.id} className="flex items-center p-3 border border-border rounded-lg bg-accent/30">
-                    <img 
-                      src={file.thumbnail} 
-                      alt={file.name} 
-                      className="w-12 h-12 object-cover rounded-md mr-4" 
-                    />
+                    {file.thumbnail ? (
+                      <img 
+                        src={file.thumbnail} 
+                        alt={file.name} 
+                        className="w-12 h-12 object-cover rounded-md mr-4" 
+                        onError={(e) => {
+                          console.error(`图片加载失败: ${file.thumbnail}`);
+                          // 设置为默认图片
+                          e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'%3E%3C/circle%3E%3Cpolyline points='21 15 16 10 5 21'%3E%3C/polyline%3E%3C/svg%3E`;
+                        }}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                          <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="font-medium text-foreground">{file.name}</div>
                       <div className="text-xs text-muted-foreground">
@@ -347,6 +497,10 @@ export default function ImageProcessPage() {
                           <>
                             {file.compressedSize} · {file.dimensions} · {file.format} (节省 {file.savingRate})
                           </>
+                        ) : file.status === 'error' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-400">
+                            处理失败: {file.error || '未知错误'}
+                          </span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-400">
                             处理中
@@ -356,6 +510,7 @@ export default function ImageProcessPage() {
                     </div>
                     <div className="flex gap-2">
                       <button 
+                        onClick={() => previewFile(file.outputPath)}
                         disabled={file.status !== 'completed'}
                         className={`p-2 rounded-md border border-border flex items-center gap-1 text-xs
                           ${file.status === 'completed' 
@@ -366,6 +521,7 @@ export default function ImageProcessPage() {
                         预览
                       </button>
                       <button 
+                        onClick={() => downloadFile(file.outputPath, file.name)}
                         disabled={file.status !== 'completed'}
                         className={`p-2 rounded-md border border-border flex items-center gap-1 text-xs
                           ${file.status === 'completed' 
@@ -392,9 +548,14 @@ export default function ImageProcessPage() {
             <div className="flex justify-center mb-4">
               <button 
                 onClick={processImages}
-                className="w-full py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors text-lg"
+                disabled={isProcessing || files.length === 0 || !hasUnprocessedFiles}
+                className={`w-full py-3 rounded-md font-medium transition-all duration-200 text-lg
+                  ${!isProcessing && files.length > 0 && hasUnprocessedFiles 
+                    ? 'bg-primary cursor-pointer   text-primary-foreground hover:bg-primary/80 hover:shadow-md active:translate-y-0.5' 
+                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
               >
-                开始处理
+                {isProcessing ? `处理中 (${processingProgress.current}/${processingProgress.total})` : 
+                 !hasUnprocessedFiles && files.length > 0 ? '所有文件已处理' : '开始处理'}
               </button>
             </div>
             
