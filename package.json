@@ -3,7 +3,7 @@
   "productName": "图片压缩工具",
   "version": "1.0.0",
   "description": "高效的图片压缩和格式转换工具，保持图片质量的同时减小文件大小",
-  "main": "out/main/main.js",
+  "main": "dist-electron/main/main.js",
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
