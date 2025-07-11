@@ -94,3 +94,7 @@ node_modules
 
 /docs
 /prototype
+
+/dist
+/dist-electron
+/release

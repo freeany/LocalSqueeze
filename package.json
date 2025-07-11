@@ -3,13 +3,15 @@
   "productName": "图片压缩工具",
   "version": "1.0.0",
   "description": "高效的图片压缩和格式转换工具，保持图片质量的同时减小文件大小",
-  "main": ".vite/build/main.js",
+  "main": "out/main/main.js",
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx ."
+    "dev": "vite",
+    "preview": "vite preview",
+    "lint": "eslint --ext .ts,.tsx .",
+    "build": "tsc && vite build && electron-builder",
+    "build:win": "npm run build && electron-builder --win --config",
+    "build:mac": "npm run build && electron-builder --mac --config",
+    "build:linux": "npm run build && electron-builder --linux --config"
   },
   "keywords": [],
   "author": {
@@ -18,15 +20,6 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@electron-forge/cli": "^7.8.1",
-    "@electron-forge/maker-deb": "^7.8.1",
-    "@electron-forge/maker-rpm": "^7.8.1",
-    "@electron-forge/maker-squirrel": "^7.8.1",
-    "@electron-forge/maker-zip": "^7.8.1",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
-    "@electron-forge/plugin-fuses": "^7.8.1",
-    "@electron-forge/plugin-vite": "^7.8.1",
-    "@electron/fuses": "^1.8.0",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@types/node": "^24.0.12",
     "@types/react": "^19.1.8",
@@ -37,7 +30,8 @@
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.21",
     "electron": "^37.2.0",
-    "electron-icon-builder": "^2.0.1",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.3.0",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
     "postcss": "^8.5.6",
@@ -45,11 +39,11 @@
     "ts-node": "^10.9.2",
     "typescript": "~4.5.4",
     "vite": "^5.4.19",
+    "vite-plugin-electron": "^0.28.8",
     "vite-plugin-electron-renderer": "^0.14.6"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
-    "@remix-run/router": "^1.23.0",
     "@tailwindcss/postcss": "^4.1.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -62,10 +56,9 @@
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router": "^7.6.3",
     "react-router-dom": "^6.22.3",
     "scheduler": "^0.26.0",
-    "sharp": "^0.34.2",
+    "sharp": "^0.32.5",
     "tailwind-merge": "^3.3.1"
   }
 }

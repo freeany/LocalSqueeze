@@ -24,6 +24,9 @@ if (started) {
   app.quit();
 }
 
+// 图片路径缓存，用于存储ID到文件路径的映射
+const imagePathCache = new Map<string, string>();
+
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -31,7 +34,7 @@ const createWindow = () => {
     height: 600,
     icon: path.join(__dirname, '../assets/icon.png'),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, '../preload/preload.js'),
       // 添加以下配置以禁用自动填充功能
       spellcheck: false,
       // 确保上下文隔离
@@ -41,15 +44,16 @@ const createWindow = () => {
     },
   });
 
-  // and load the index.html of the app.
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+  // 加载应用
+  if (process.env.VITE_DEV_SERVER_URL) {
+    // 开发模式：加载Vite开发服务器URL
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+    // 打开开发工具
+    mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+    // 生产模式：加载打包后的HTML文件
+    mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
   }
-
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
@@ -82,9 +86,6 @@ app.on('ready', async () => {
       callback({ error: -2 });
     }
   });
-  
-  // 图片路径缓存，用于存储ID到文件路径的映射
-  const imagePathCache = new Map<string, string>();
   
   // 注册保存临时文件的处理程序
   ipcMain.handle('save-temp-file', async (_, args) => {
@@ -140,6 +141,13 @@ app.on('ready', async () => {
   // 注册读取图片为Data URL的处理程序
   ipcMain.handle('get-image-data-url', async (_, filePath) => {
     try {
+      // 检查文件是否存在
+      if (!existsSync(filePath)) {
+        console.log(`文件不存在，返回默认图片: ${filePath}`);
+        // 返回一个默认的图片数据
+        return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiI+PC9yZWN0PjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ij48L2NpcmNsZT48cG9seWxpbmUgcG9pbnRzPSIyMSAxNSAxNiAxMCA1IDIxIj48L3BvbHlsaW5lPjwvc3ZnPg==';
+      }
+      
       // 读取文件
       const data = await fs.readFile(filePath);
       
@@ -160,7 +168,8 @@ app.on('ready', async () => {
       return `data:${mimeType};base64,${base64Data}`;
     } catch (error) {
       console.error('读取图片失败:', error);
-      return '';
+      // 返回一个默认的图片数据
+      return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiI+PC9yZWN0PjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ij48L2NpcmNsZT48cG9seWxpbmUgcG9pbnRzPSIyMSAxNSAxNiAxMCA1IDIxIj48L3BvbHlsaW5lPjwvc3ZnPg==';
     }
   });
   
@@ -253,21 +262,13 @@ app.on('activate', () => {
   }
 });
 
-// 退出前清理临时文件
+// 在应用退出前清理临时文件
 app.on('will-quit', async () => {
   try {
-    // 读取临时目录中的所有文件
-    const files = await fs.readdir(TEMP_DIR);
-    
-    // 删除所有文件
-    for (const file of files) {
-      const filePath = path.join(TEMP_DIR, file);
-      await fs.unlink(filePath);
-    }
+    // 可以选择性地清理临时目录
+    // await fs.rm(TEMP_DIR, { recursive: true, force: true });
+    console.log('应用退出，临时目录保留:', TEMP_DIR);
   } catch (error) {
-    console.error('清理临时文件失败:', error);
+    console.error('清理临时目录失败:', error);
   }
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.

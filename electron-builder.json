@@ -1,0 +1,43 @@
+{
+  "appId": "com.lhr.imgs-compress",
+  "productName": "图片压缩工具",
+  "directories": {
+    "output": "release/${version}"
+  },
+  "files": [
+    "out/**/*",
+    "package.json",
+    "node_modules/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "node_modules/sharp",
+      "to": "node_modules/sharp"
+    }
+  ],
+  "mac": {
+    "target": ["dmg"],
+    "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "artifactName": "${productName}-Windows-${version}-Setup.${ext}",
+    "icon": "src/assets/icon.png"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false
+  },
+  "linux": {
+    "target": ["deb", "rpm", "AppImage"],
+    "artifactName": "${productName}-Linux-${version}.${ext}",
+    "icon": "src/assets/icon.png"
+  }
+} 

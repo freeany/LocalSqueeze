@@ -17,7 +17,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './components/App';
 
-console.log('👋 This message is being logged by "renderer.tsx", included via Vite');
+console.log('👋 应用已启动');
 
 // 创建根元素
 const rootElement = document.getElementById('root');

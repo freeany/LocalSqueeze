@@ -33,18 +33,18 @@ export default function HomePage() {
       try {
         // 获取统计数据
         const response = await window.stats.getStats();
-        if (response.success) {
+        if (response && response.success && response.stats) {
           setStats({
-            processedImages: response.stats.totalProcessedImages,
-            savedSpace: formatFileSize(response.stats.totalSavedSpace),
-            compressionRate: response.stats.averageCompressionRate,
-            todayProcessed: response.todayStats.processedImages
+            processedImages: response.stats.totalProcessedImages || 0,
+            savedSpace: formatFileSize(response.stats.totalSavedSpace || 0),
+            compressionRate: response.stats.averageCompressionRate || '0%',
+            todayProcessed: response.todayStats?.processedImages || 0
           });
         }
         
         // 获取最近处理的图片
         const recentResponse = await window.stats.getRecentImages(4);
-        if (recentResponse.success) {
+        if (recentResponse && recentResponse.success && Array.isArray(recentResponse.images)) {
           const formattedImages: ImageItem[] = [];
           
           // 处理每张图片
@@ -72,6 +72,13 @@ export default function HomePage() {
         }
       } catch (error) {
         console.error('加载统计数据失败:', error);
+        // 错误时使用默认值
+        setStats({
+          processedImages: 0,
+          savedSpace: '0 MB',
+          compressionRate: '0%',
+          todayProcessed: 0
+        });
       }
     };
     
