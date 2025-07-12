@@ -8,7 +8,7 @@
     "dev": "vite",
     "preview": "vite preview",
     "lint": "eslint --ext .ts,.tsx .",
-    "build": "tsc && vite build && electron-builder",
+    "build": "vite build && electron-builder",
     "build:win": "npm run build && electron-builder --win --config",
     "build:mac": "npm run build && electron-builder --mac --config",
     "build:linux": "npm run build && electron-builder --linux --config"
@@ -37,7 +37,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
     "ts-node": "^10.9.2",
-    "typescript": "~4.5.4",
+    "typescript": "^5.8.3",
     "vite": "^5.4.19",
     "vite-plugin-electron": "^0.29.0",
     "vite-plugin-electron-renderer": "^0.14.6"

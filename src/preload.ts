@@ -121,7 +121,7 @@ const statsAPI = {
         })
         .catch(error => {
           logError('调用getRecentImages失败', error);
-          return { success: true, images: [] };
+          return { success: true, images: [] as any[] };
         });
     } catch (error) {
       logError('getRecentImages异常', error);

@@ -5,7 +5,8 @@
     "output": "release/${version}"
   },
   "files": [
-    "out/**/*",
+    "dist/**/*",
+    "dist-electron/**/*",
     "package.json",
     "node_modules/**/*"
   ],
@@ -26,8 +27,7 @@
         "arch": ["x64"]
       }
     ],
-    "artifactName": "${productName}-Windows-${version}-Setup.${ext}",
-    "icon": "src/assets/icon.png"
+    "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
   },
   "nsis": {
     "oneClick": false,
@@ -37,7 +37,6 @@
   },
   "linux": {
     "target": ["deb", "rpm", "AppImage"],
-    "artifactName": "${productName}-Linux-${version}.${ext}",
-    "icon": "src/assets/icon.png"
+    "artifactName": "${productName}-Linux-${version}.${ext}"
   }
 } 

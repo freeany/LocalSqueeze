@@ -32,7 +32,7 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    icon: path.join(__dirname, '../assets/icon.png'),
+    icon: path.join(__dirname, '../build/icons/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       // 添加以下配置以禁用自动填充功能
