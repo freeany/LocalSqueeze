@@ -55,9 +55,26 @@ export default function HomePage() {
         setLoading(true);
         setError(null);
         
+        // 调试：检查window对象上的API
+        logInfo('检查window对象上的API', {
+          hasElectron: !!window.electron,
+          hasStats: !!window.stats,
+          hasCompression: !!window.compression
+        });
+        
         // 检查window.stats是否存在
         if (!window.stats) {
-          throw new Error('window.stats API不可用');
+          console.warn('window.stats API不可用，尝试使用默认值');
+          setStats({
+            processedImages: 0,
+            savedSpace: '0 MB',
+            compressionRate: '0%',
+            todayProcessed: 0
+          });
+          setRecentImages([]);
+          setLoading(false);
+          setError('统计数据API不可用，请检查预加载脚本是否正确加载');
+          return;
         }
         
         logInfo('调用window.stats.getStats()');
@@ -180,6 +197,13 @@ export default function HomePage() {
     setLoading(true);
     setError(null);
     
+    // 检查API是否可用
+    if (!window.stats) {
+      setError('统计数据API不可用');
+      setLoading(false);
+      return;
+    }
+    
     // 重新加载数据
     Promise.all([
       window.stats.getStats(),
@@ -242,6 +266,20 @@ export default function HomePage() {
           简单高效的图片压缩解决方案，帮助您减小图片文件大小，同时保持良好的图像质量
         </p>
       </div>
+      
+      {/* 错误提示 */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mx-auto max-w-2xl">
+          <p className="font-medium">加载数据时出现错误:</p>
+          <p>{error}</p>
+          <button 
+            onClick={refreshData}
+            className="mt-2 bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded-md text-sm"
+          >
+            重试
+          </button>
+        </div>
+      )}
       
       {/* 功能特点 */}
       <div className="mt-12">

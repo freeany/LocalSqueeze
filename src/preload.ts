@@ -253,23 +253,26 @@ const electronAPI = {
   }
 };
 
-// 确保API在渲染进程中可用
-try {
-  // 测试IPC通道是否可用
-  logInfo('测试IPC通道是否可用');
-  
-  // 暴露API到渲染进程
-  logInfo('开始暴露API到window对象');
-  contextBridge.exposeInMainWorld('compression', compressionAPI);
-  contextBridge.exposeInMainWorld('stats', statsAPI);
-  contextBridge.exposeInMainWorld('electron', electronAPI);
-  
-  logInfo('预加载脚本已成功执行，API已暴露到window对象');
-} catch (error) {
-  logError('暴露API到渲染进程失败', error);
+// 使用contextBridge暴露API到渲染进程
+if (process.contextIsolated) {
+  try {
+    logInfo('使用contextBridge暴露API到渲染进程');
+    contextBridge.exposeInMainWorld('compression', compressionAPI);
+    contextBridge.exposeInMainWorld('stats', statsAPI);
+    contextBridge.exposeInMainWorld('electron', electronAPI);
+    logInfo('API已成功暴露到渲染进程');
+  } catch (error) {
+    logError('暴露API到渲染进程失败', error);
+  }
+} else {
+  logError('上下文隔离已禁用，这可能会带来安全风险', null);
+  // 如果上下文隔离被禁用，直接设置到window对象
+  (window as any).compression = compressionAPI;
+  (window as any).stats = statsAPI;
+  (window as any).electron = electronAPI;
 }
 
-// 为了与electron-vite兼容，导出函数
+// 导出类型定义
 export type ElectronAPI = typeof electronAPI;
 export type CompressionAPI = typeof compressionAPI;
 export type StatsAPI = typeof statsAPI;

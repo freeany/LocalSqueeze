@@ -112,6 +112,10 @@ declare global {
   }
 }
 
+// 添加Electron Forge Vite插件的全局变量声明
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
+declare const MAIN_WINDOW_VITE_NAME: string | undefined;
+
 declare module '*.png' {
   const value: string;
   export default value;

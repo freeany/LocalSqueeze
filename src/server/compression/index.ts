@@ -6,7 +6,7 @@
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
-import { formatFileSize, calculateCompressionRate, getFileExtension } from '../../lib/utils';
+import { calculateCompressionRate, getFileExtension } from '../../lib/utils';
 
 // 压缩设置类型定义
 export interface CompressionSettings {

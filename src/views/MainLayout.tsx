@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle';
 import Sidebar from '../components/Sidebar';
-import iconImage from '../build/icons/icon.png';
+import iconImage from '../assets/icons/icon.png';
 
 export default function MainLayout() {
   const [isDarkMode, setIsDarkMode] = useState(false);

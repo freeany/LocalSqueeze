@@ -5,13 +5,13 @@
   "description": "高效的图片压缩和格式转换工具，保持图片质量的同时减小文件大小",
   "main": "dist-electron/main/main.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "electron-forge start",
     "preview": "vite preview",
     "lint": "eslint --ext .ts,.tsx .",
-    "build": "vite build && electron-builder",
-    "build:win": "npm run build && electron-builder --win --config",
-    "build:mac": "npm run build && electron-builder --mac --config",
-    "build:linux": "npm run build && electron-builder --linux --config"
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish"
   },
   "keywords": [],
   "author": {
@@ -20,6 +20,15 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@electron-forge/cli": "^7.8.1",
+    "@electron-forge/maker-deb": "^7.8.1",
+    "@electron-forge/maker-rpm": "^7.8.1",
+    "@electron-forge/maker-squirrel": "^7.8.1",
+    "@electron-forge/maker-zip": "^7.8.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
+    "@electron-forge/plugin-fuses": "^7.8.1",
+    "@electron-forge/plugin-vite": "^7.8.1",
+    "@electron/fuses": "^1.8.0",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@types/node": "^24.0.12",
     "@types/react": "^19.1.8",
@@ -30,23 +39,21 @@
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.21",
     "electron": "^37.2.0",
-    "electron-builder": "^24.13.3",
-    "electron-vite": "^2.3.0",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "vite": "^5.4.19",
-    "vite-plugin-electron": "^0.29.0",
-    "vite-plugin-electron-renderer": "^0.14.6"
+    "vite": "^5.4.19"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
+    "@remix-run/router": "^1.23.0",
     "@tailwindcss/postcss": "^4.1.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cookie": "^1.0.2",
     "electron-squirrel-startup": "^1.0.1",
     "imagemin": "^8.0.1",
     "imagemin-gifsicle": "^7.0.0",
@@ -56,8 +63,10 @@
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^6.22.3",
+    "react-router": "6.30.1",
+    "react-router-dom": "^6.30.1",
     "scheduler": "^0.26.0",
+    "set-cookie-parser": "^2.7.1",
     "sharp": "^0.32.5",
     "tailwind-merge": "^3.3.1"
   }

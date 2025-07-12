@@ -1,25 +1,16 @@
-# 图片压缩工具
+# LocalSqueeze - 图片压缩工具
 
-一款基于Electron和Sharp的高效图片压缩工具，支持多种格式的图片压缩和格式转换。
-
-## 主要功能
-
-- 支持JPEG、PNG、GIF、WebP等多种格式的图片压缩
-- 高质量压缩算法，在保持图片质量的同时最大程度减小文件大小
-- 批量处理功能，提高工作效率
-- 压缩前后效果对比，直观查看压缩效果
-- 可调整图片尺寸，适应不同场景需求
-- 支持格式转换，如将其他格式转为WebP
-- 本地处理，保护隐私安全
+高效的图片压缩和格式转换工具，保持图片质量的同时减小文件大小。
 
 ## 技术栈
 
-- 前端：React + Vite + TailwindCSS
-- 后端：Node.js + Sharp
-- 桌面应用：Electron
-- 图片处理：Sharp + imagemin系列插件
+- Electron
+- React
+- TypeScript
+- Tailwind CSS
+- Electron Forge
 
-## 开发指南
+## 开发
 
 ### 安装依赖
 
@@ -30,35 +21,41 @@ npm install
 ### 启动开发环境
 
 ```bash
-npm run start
+npm run dev
 ```
 
 ### 打包应用
 
 ```bash
+npm run package
+```
+
+### 构建可分发的安装包
+
+```bash
 npm run make
 ```
 
-## 使用方法
+## 项目架构
 
-1. 启动应用后，可以通过拖放或点击选择文件按钮上传图片
-2. 在压缩设置页面选择合适的压缩参数
-3. 点击压缩按钮开始处理图片
-4. 处理完成后可以查看压缩效果对比
-5. 满意后点击导出按钮保存处理结果
+该项目使用Electron Forge作为构建和打包工具，使用Vite作为前端构建工具。
 
-## 压缩算法
+### 主要目录结构
 
-本工具使用了多种优化策略来处理不同格式的图片：
+- `src/main.ts` - Electron主进程入口
+- `src/preload.ts` - 预加载脚本
+- `src/renderer.ts` - 渲染进程入口
+- `src/app.tsx` - React应用入口
+- `src/components/` - React组件
+- `src/views/` - 页面视图
+- `src/server/` - 服务端逻辑（在主进程中运行）
 
-- **JPEG**：使用mozjpeg优化，支持渐进式、Trellis量化等高级特性
-- **PNG**：使用pngquant优化，支持调色板优化、自适应过滤等特性
-- **GIF**：使用gifsicle优化帧和颜色
-- **WebP**：支持有损/无损压缩，智能二次采样等特性
+## 构建配置
 
-## 贡献指南
-
-欢迎提交Issue和Pull Request，一起改进这个工具！
+- `forge.config.js` - Electron Forge配置
+- `vite.main.config.ts` - 主进程Vite配置
+- `vite.preload.config.ts` - 预加载脚本Vite配置
+- `vite.renderer.config.ts` - 渲染进程Vite配置
 
 ## 许可证
 

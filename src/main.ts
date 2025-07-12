@@ -1,11 +1,14 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, protocol, net } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, protocol } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import fs from 'fs/promises';
 import { existsSync } from 'fs'; // 添加同步版本的fs
 import os from 'os';
 import { initAllHandlers } from './server/ipc';
-import { URL } from 'url';
+
+// 声明Electron Forge Vite插件注入的全局变量
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
+declare const MAIN_WINDOW_VITE_NAME: string | undefined;
 
 // 临时目录路径
 const TEMP_DIR = path.join(os.tmpdir(), 'imgs-compress');
@@ -27,33 +30,79 @@ if (started) {
 // 图片路径缓存，用于存储ID到文件路径的映射
 const imagePathCache = new Map<string, string>();
 
+// 声明全局变量以保存对主窗口的引用
+let mainWindow: BrowserWindow | null = null;
+
+// 获取预加载脚本路径
+const getPreloadPath = () => {
+  // 开发环境下的路径
+  const devPath = path.join(__dirname, '../../dist-electron/preload/preload.js');
+  // 生产环境下的路径
+  const prodPath = path.join(__dirname, '../preload/preload.js');
+  
+  console.log('检查预加载脚本路径:');
+  console.log('- 开发环境路径:', devPath, existsSync(devPath) ? '存在' : '不存在');
+  console.log('- 生产环境路径:', prodPath, existsSync(prodPath) ? '存在' : '不存在');
+  
+  // 根据环境选择正确的路径
+  const preloadPath = app.isPackaged ? prodPath : devPath;
+  console.log('选择的预加载脚本路径:', preloadPath);
+  
+  return preloadPath;
+};
+
 const createWindow = () => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    icon: path.join(__dirname, '../build/icons/icon.png'),
+    icon: path.join(__dirname, '../assets/icons/icon.png'),
     webPreferences: {
-      preload: path.join(__dirname, '../preload/preload.js'),
+      preload: getPreloadPath(),
       // 添加以下配置以禁用自动填充功能
       spellcheck: false,
       // 确保上下文隔离
       contextIsolation: true,
       // 允许加载本地资源
       webSecurity: false, // 注意：这会降低安全性，但在本地应用中可以接受
+      // 启用开发者工具
+      devTools: true,
+      // 允许远程模块
+      nodeIntegration: false,
+      // 启用沙箱
+      sandbox: false,
     },
   });
 
+  // 打开开发者工具
+  mainWindow.webContents.openDevTools();
+
   // 加载应用
-  if (process.env.VITE_DEV_SERVER_URL) {
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     // 开发模式：加载Vite开发服务器URL
-    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
-    // 打开开发工具
-    mainWindow.webContents.openDevTools();
+    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    console.log('加载开发服务器URL:', MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
     // 生产模式：加载打包后的HTML文件
-    mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
+    const indexPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`);
+    console.log('加载生产环境HTML:', indexPath);
+    mainWindow.loadFile(indexPath);
   }
+  
+  // 监听页面加载完成事件
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('页面加载完成');
+  });
+  
+  // 监听渲染进程错误
+  mainWindow.webContents.on('render-process-gone', (event, details) => {
+    console.error('渲染进程崩溃:', details.reason);
+  });
+  
+  // 监听页面崩溃
+  mainWindow.webContents.on('crashed' as any, () => {
+    console.error('页面崩溃');
+  });
 };
 
 // This method will be called when Electron has finished
@@ -262,13 +311,5 @@ app.on('activate', () => {
   }
 });
 
-// 在应用退出前清理临时文件
-app.on('will-quit', async () => {
-  try {
-    // 可以选择性地清理临时目录
-    // await fs.rm(TEMP_DIR, { recursive: true, force: true });
-    console.log('应用退出，临时目录保留:', TEMP_DIR);
-  } catch (error) {
-    console.error('清理临时目录失败:', error);
-  }
-});
+// In this file you can include the rest of your app's specific main process
+// code. You can also put them in separate files and import them here.
