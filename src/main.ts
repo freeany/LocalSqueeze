@@ -6,6 +6,22 @@ import { existsSync } from 'fs'; // 添加同步版本的fs
 import os from 'os';
 import { initAllHandlers } from './server/ipc';
 
+// 确保Sharp正确加载
+try {
+  // 尝试预加载Sharp
+  const sharpPath = path.join(app.getAppPath(), 'node_modules', 'sharp');
+  if (existsSync(sharpPath)) {
+    console.log('Sharp模块路径存在:', sharpPath);
+    // 在应用启动时预加载Sharp
+    require('sharp');
+    console.log('Sharp模块加载成功');
+  } else {
+    console.error('Sharp模块路径不存在:', sharpPath);
+  }
+} catch (error) {
+  console.error('加载Sharp模块失败:', error);
+}
+
 // 声明Electron Forge Vite插件注入的全局变量
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string | undefined;
@@ -36,7 +52,7 @@ let mainWindow: BrowserWindow | null = null;
 // 获取预加载脚本路径
 const getPreloadPath = () => {
   // 开发环境下的路径
-  const devPath = path.join(__dirname, '../../dist-electron/preload/preload.js');
+  const devPath = path.join(__dirname, '../preload/preload.js');
   // 生产环境下的路径
   const prodPath = path.join(__dirname, '../preload/preload.js');
   

@@ -4,18 +4,23 @@ import path from 'path';
 
 export default {
   packagerConfig: {
-    asar: true,
+    asar: {
+      // 不将Sharp打包到asar文件中
+      unpack: "**/{node_modules/sharp,node_modules/@img/**/*}"
+    },
     appId: "com.lhr.imgs-compress",
     productName: "图片压缩工具",
-    extraResource: [
-      {
-        from: "node_modules/sharp",
-        to: "node_modules/sharp"
-      }
-    ],
-    icon: path.resolve(__dirname, 'src/assets/icons/icon')
+    icon: path.resolve(__dirname, 'src/assets/icons/icon'),
+    // 确保不忽略.vite目录
+    ignore: [
+      /^\/(?!\.vite|dist|src|node_modules)/
+    ]
   },
-  rebuildConfig: {},
+  rebuildConfig: {
+    // 添加Sharp重建配置
+    forceRebuild: true,
+    onlyModules: ['sharp']
+  },
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
