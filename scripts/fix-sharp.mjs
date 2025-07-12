@@ -31,15 +31,15 @@ try {
   // 根据平台安装正确版本的Sharp
   console.log('为当前平台重新安装Sharp...');
   
-  // 使用pnpm安装sharp
-  execSync('pnpm install sharp@0.34.3 --force', {
+  // 使用npm安装sharp
+  execSync('npm install sharp@0.34.3 --force', {
     cwd: path.join(__dirname, '..'),
     stdio: 'inherit'
   });
   
   // 为Electron重新编译Sharp
   console.log('为Electron重新编译Sharp...');
-  execSync('pnpm exec electron-rebuild -f -w sharp', {
+  execSync('npx @electron/rebuild --only=sharp', {
     cwd: path.join(__dirname, '..'),
     stdio: 'inherit'
   });

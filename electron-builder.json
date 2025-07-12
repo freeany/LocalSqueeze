@@ -29,6 +29,10 @@
     {
       "from": "node_modules/sharp",
       "to": "node_modules/sharp"
+    },
+    {
+      "from": "dist",
+      "to": "dist"
     }
   ],
   "asar": {

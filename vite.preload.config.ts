@@ -6,6 +6,11 @@ import path from 'node:path';
 export default defineConfig({
   build: {
     outDir: 'dist-electron/preload',
+    lib: {
+      entry: path.resolve(__dirname, 'src/preload.ts'),
+      formats: ['cjs'],
+      fileName: () => 'preload.js',
+    },
     minify: false, // 不要压缩预加载脚本，以便于调试
     sourcemap: 'inline', // 添加内联源映射，以便于调试
     rollupOptions: {

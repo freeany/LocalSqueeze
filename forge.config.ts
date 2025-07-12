@@ -33,11 +33,23 @@ export default {
       },
     },
     {
-      name: '@electron-forge/maker-zip',
+      name: '@electron-forge/maker-dmg',
       platforms: ['darwin'],
       config: {
-        options: {
-          icon: path.resolve(__dirname, 'src/assets/icons/icon.icns'),
+        format: 'ULFO',
+        icon: path.resolve(__dirname, 'src/assets/icons/icon.icns'),
+        iconSize: 80,
+        contents: (opts) => {
+          return [
+            { x: 448, y: 344, type: 'link', path: '/Applications' },
+            { x: 192, y: 344, type: 'file', path: opts.appPath }
+          ];
+        },
+        window: {
+          size: {
+            width: 640,
+            height: 480
+          }
         }
       }
     },

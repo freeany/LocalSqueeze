@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, protocol } from 'electron';
-import path from 'node:path';
+import path from 'path';
 import started from 'electron-squirrel-startup';
 import fs from 'fs/promises';
 import { existsSync } from 'fs'; // 添加同步版本的fs
@@ -94,7 +94,7 @@ const createWindow = () => {
   mainWindow.webContents.openDevTools();
 
   // 加载应用
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL && process.env.NODE_ENV !== 'production') {
     // 开发模式：加载Vite开发服务器URL
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     console.log('加载开发服务器URL:', MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -102,8 +102,44 @@ const createWindow = () => {
     // 生产模式：加载打包后的HTML文件
     const indexPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`);
     console.log('加载生产环境HTML:', indexPath);
-    mainWindow.loadFile(indexPath);
+    
+    // 检查文件是否存在
+    if (existsSync(indexPath)) {
+      mainWindow.loadFile(indexPath);
+    } else {
+      // 尝试备用路径
+      const alternativePath = path.join(__dirname, '../renderer/index.html');
+      console.log('尝试备用路径:', alternativePath);
+      
+      if (existsSync(alternativePath)) {
+        mainWindow.loadFile(alternativePath);
+      } else {
+        // 再尝试一个路径
+        const fallbackPath = path.join(app.getAppPath(), 'dist/index.html');
+        console.log('尝试最终备用路径:', fallbackPath);
+        mainWindow.loadFile(fallbackPath);
+      }
+    }
   }
+  
+  // 阻止导航到外部URL
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    // 检查URL是否为localhost或开发服务器URL
+    if (app.isPackaged && (url.includes('localhost') || url.includes('127.0.0.1'))) {
+      console.log('阻止导航到开发服务器URL:', url);
+      event.preventDefault();
+    }
+  });
+
+  // 阻止创建新窗口
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // 检查URL是否为localhost或开发服务器URL
+    if (app.isPackaged && (url.includes('localhost') || url.includes('127.0.0.1'))) {
+      console.log('阻止打开开发服务器URL:', url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
+  });
   
   // 监听页面加载完成事件
   mainWindow.webContents.on('did-finish-load', () => {

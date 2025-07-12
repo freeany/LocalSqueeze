@@ -9,14 +9,13 @@
     "preview": "vite preview",
     "lint": "eslint --ext .ts,.tsx .",
     "start": "electron-forge start",
-    "prebuild": "@electron/rebuild --only=sharp",
     "prepackage": "node scripts/fix-sharp.mjs",
     "package": "electron-forge package",
-    "package:offline": "ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://127.0.0.1:7890 electron-forge package",
+    "package:mac": "node scripts/fix-sharp.mjs && vite build && vite build -c vite.main.config.ts && vite build -c vite.preload.config.ts && electron-packager . 图片压缩工具 --platform=darwin --arch=x64 --out=out --icon=src/assets/icons/icon.icns --overwrite",
+    "package:win": "node scripts/fix-sharp.mjs && vite build && vite build -c vite.main.config.ts && vite build -c vite.preload.config.ts && electron-packager . 图片压缩工具 --platform=win32 --arch=x64 --out=out --icon=src/assets/icons/icon.ico --overwrite",
+    "package:linux": "node scripts/fix-sharp.mjs && vite build && vite build -c vite.main.config.ts && vite build -c vite.preload.config.ts && electron-packager . 图片压缩工具 --platform=linux --arch=x64 --out=out --icon=src/assets/icons/icon.png --overwrite",
     "make": "electron-forge make",
-    "publish": "electron-forge publish",
-    "build": "vite build && electron-builder",
-    "build:dir": "vite build && electron-builder --dir"
+    "publish": "electron-forge publish"
   },
   "keywords": [],
   "author": {
@@ -27,6 +26,7 @@
   "devDependencies": {
     "@electron-forge/cli": "^7.8.1",
     "@electron-forge/maker-deb": "^7.8.1",
+    "@electron-forge/maker-dmg": "^7.8.1",
     "@electron-forge/maker-rpm": "^7.8.1",
     "@electron-forge/maker-squirrel": "^7.8.1",
     "@electron-forge/maker-zip": "^7.8.1",
@@ -35,6 +35,7 @@
     "@electron-forge/plugin-vite": "^7.8.1",
     "@electron/fuses": "^1.8.0",
     "@electron/rebuild": "^4.0.1",
+    "@tailwindcss/postcss": "^4.1.11",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@types/node": "^24.0.12",
     "@types/react": "^19.1.8",
@@ -48,7 +49,7 @@
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.11",
+    "tailwindcss": "^4.0.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "vite": "^5.4.19"
@@ -58,11 +59,12 @@
     "@radix-ui/react-compose-refs": "^1.1.2",
     "@radix-ui/react-slot": "^1.2.3",
     "@remix-run/router": "^1.23.0",
-    "@tailwindcss/postcss": "^4.1.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "electron-squirrel-startup": "^1.0.1",
     "lucide-react": "^0.525.0",
+    "nanoid": "^5.1.5",
+    "picocolors": "^1.1.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router": "6.30.1",
@@ -70,6 +72,7 @@
     "scheduler": "^0.26.0",
     "set-cookie-parser": "^2.7.1",
     "sharp": "^0.34.3",
+    "source-map-js": "^1.2.1",
     "tailwind-merge": "^3.3.1"
   }
 }

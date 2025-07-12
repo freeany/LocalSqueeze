@@ -1,12 +1,18 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, HashRouter } from 'react-router-dom';
 import MainLayout from '../views/MainLayout';
 import HomePage from '../views/HomePage';
 import ImageProcessPage from '../views/ImageProcessPage';
 import CompressionSettings from '../views/CompressionSettings';
 
 export default function App() {
+  // 判断是否为生产环境
+  const isProduction = !window.location.href.includes('localhost');
+  
+  // 使用HashRouter可以避免路径问题
+  const RouterComponent = isProduction ? HashRouter : Router;
+  
   return (
-    <Router>
+    <RouterComponent>
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
@@ -19,6 +25,6 @@ export default function App() {
           <Route path="help" element={<div>帮助页面</div>} />
         </Route>
       </Routes>
-    </Router>
+    </RouterComponent>
   );
 }
