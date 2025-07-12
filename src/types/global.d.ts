@@ -2,19 +2,9 @@
  * 全局类型定义
  */
 
-// 压缩结果类型
-export interface CompressionResult {
-  originalPath: string;
-  outputPath: string;
-  originalSize: number;
-  compressedSize: number;
-  compressionRate: string;
-  width: number;
-  height: number;
-  outputFormat: string;
-}
+// 全局类型声明
 
-// 压缩设置类型
+// 压缩设置接口
 export interface CompressionSettings {
   quality: number;
   keepDimensions: boolean;
@@ -24,7 +14,21 @@ export interface CompressionSettings {
   progressive: boolean;
 }
 
-// 处理后的图片记录
+// 压缩结果接口
+export interface CompressionResult {
+  success: boolean;
+  originalPath: string;
+  outputPath: string;
+  originalSize: number;
+  compressedSize: number;
+  compressionRate: string;
+  width: number;
+  height: number;
+  outputFormat: string;
+  error?: string;
+}
+
+// 处理后的图片信息
 export interface ProcessedImage {
   id: string;
   name: string;
@@ -39,7 +43,7 @@ export interface ProcessedImage {
   processedAt: number;
 }
 
-// 统计数据
+// 压缩统计数据
 export interface CompressionStats {
   totalProcessedImages: number;
   totalOriginalSize: number;
@@ -49,13 +53,14 @@ export interface CompressionStats {
   lastUpdated: number;
 }
 
-// 每日统计
+// 每日统计数据
 export interface DailyStats {
+  date: string;
   processedImages: number;
   savedSpace: number;
 }
 
-// 扩展Window接口
+// 声明全局window接口，添加electron和compression属性
 declare global {
   interface Window {
     electron: {
@@ -65,7 +70,6 @@ declare global {
         once: (channel: string, func: (...args: any[]) => void) => void;
         removeListener: (channel: string, func: (...args: any[]) => void) => void;
         removeAllListeners: (channel: string) => void;
-        send: (channel: string, ...args: any[]) => void;
       };
     };
     compression: {
@@ -78,8 +82,11 @@ declare global {
       convertToWebp: (imagePath: string, settings: CompressionSettings, outputPath?: string) => Promise<CompressionResult>;
       getCompressionPreset: (presetName: string) => Promise<CompressionSettings>;
       selectOutputDirectory: () => Promise<string | undefined>;
-      clearTempFiles: () => Promise<{ success: boolean; error?: string }>;
-      onCompressionProgress: (callback: (data: { current: number; total: number }) => void) => () => void;
+      clearTempFiles: () => Promise<any>;
+      onCompressionProgress: (callback: (data: {
+        current: number;
+        total: number;
+      }) => void) => () => void;
     };
     stats: {
       getStats: () => Promise<{

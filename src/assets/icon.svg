@@ -1,0 +1,24 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="256" height="256" rx="48" fill="#4A90E2"/>
+  <!-- 图片边框 -->
+  <rect x="48" y="60" width="160" height="120" rx="12" fill="#fff" stroke="#3367B2" stroke-width="8"/>
+  <!-- 山形图片内容 -->
+  <polygon points="60,160 100,120 144,164 172,130 196,160" fill="#B3DDF2"/>
+  <!-- 太阳 -->
+  <circle cx="85" cy="90" r="16" fill="#FFD347"/>
+  <!-- 压缩箭头 -->
+  <g>
+    <rect x="116" y="180" width="24" height="32" rx="6" fill="#fff" stroke="#3367B2" stroke-width="4"/>
+    <polygon points="128,208 116,196 140,196" fill="#3367B2"/>
+  </g>
+  <!-- 透明度渐变（视觉压缩） -->
+  <rect x="48" y="180" width="160" height="24" rx="8"
+        fill="url(#grad1)" opacity="0.4"/>
+  <defs>
+    <linearGradient id="grad1" x1="48" y1="180" x2="208" y2="204" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3367B2"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>

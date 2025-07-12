@@ -1,45 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Upload, Download, Eye } from 'lucide-react';
 import { formatFileSize, calculateCompressionRate } from '../lib/utils';
-import { CompressionSettings, CompressionResult, ProcessedImage } from '../types/global';
-
-// 声明全局window接口，添加electron和compression属性
-declare global {
-  interface Window {
-    electron: {
-      ipcRenderer: {
-        invoke: (channel: string, ...args: any[]) => Promise<any>;
-        on: (channel: string, func: (...args: any[]) => void) => void;
-        removeListener: (channel: string, func: (...args: any[]) => void) => void;
-        removeAllListeners: (channel: string) => void;
-      };
-    };
-    compression: {
-      compressImage: (imagePath: string, settings: any, outputPath?: string) => Promise<any>;
-      batchCompressImages: (imagePaths: string[], settings: any, outputDir?: string) => Promise<any>;
-      convertToWebp: (imagePath: string, settings: any, outputPath?: string) => Promise<any>;
-      getCompressionPreset: (presetName: string) => Promise<any>;
-      selectOutputDirectory: () => Promise<string | undefined>;
-      clearTempFiles: () => Promise<any>;
-      onCompressionProgress: (callback: (data: any) => void) => () => void;
-    };
-    stats: {
-      addProcessedImage: (image: {
-        id: string;
-        name: string;
-        originalPath: string;
-        outputPath: string;
-        originalSize: number;
-        compressedSize: number;
-        compressionRate: string;
-        width: number;
-        height: number;
-        format: string;
-        processedAt: number;
-      }) => Promise<any>;
-    };
-  }
-}
+// eslint-disable-next-line import/no-unresolved
+import { CompressionSettings, CompressionResult } from '../types/global';
 
 // 获取文件名（替代path.basename）
 function getBasename(filepath: string): string {

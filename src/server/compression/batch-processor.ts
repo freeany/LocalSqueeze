@@ -17,7 +17,7 @@ const DEFAULT_MAX_WORKERS = Math.max(os.cpus().length - 1, 1);
  */
 export class BatchProcessor {
   private maxWorkers: number;
-  private activeWorkers: number = 0;
+  private activeWorkers = 0;
   private queue: {
     inputPath: string;
     outputPath: string;
@@ -27,8 +27,8 @@ export class BatchProcessor {
   }[] = [];
   private results: CompressionResult[] = [];
   private onProgressCallback?: (current: number, total: number, result?: CompressionResult) => void;
-  private total: number = 0;
-  private completed: number = 0;
+  private total = 0;
+  private completed = 0;
   
   /**
    * 创建批量处理管理器

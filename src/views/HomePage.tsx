@@ -3,6 +3,16 @@ import { Upload, Sliders, Images, Package, Search, Repeat, Smartphone, Lock, Fil
 import { Link } from 'react-router-dom';
 import { formatFileSize } from '../lib/utils';
 
+// 记录日志函数
+const logInfo = (message: string, ...args: any[]) => {
+  console.log(`[HomePage] ${message}`, ...args);
+};
+
+// 记录错误函数
+const logError = (message: string, error: any) => {
+  console.error(`[HomePage Error] ${message}`, error);
+};
+
 // 定义图片类型接口
 interface ImageItem {
   id: string;
@@ -16,6 +26,8 @@ interface ImageItem {
 }
 
 export default function HomePage() {
+  logInfo('HomePage组件渲染');
+  
   // 统计数据状态
   const [stats, setStats] = useState({
     processedImages: 0,
@@ -27,31 +39,69 @@ export default function HomePage() {
   // 最近处理的图片
   const [recentImages, setRecentImages] = useState<ImageItem[]>([]);
   
+  // 加载中状态
+  const [loading, setLoading] = useState(true);
+  
+  // 错误状态
+  const [error, setError] = useState<string | null>(null);
+  
   // 加载统计数据
   useEffect(() => {
+    let isMounted = true;
+    
     const loadStats = async () => {
+      logInfo('开始加载统计数据');
       try {
-        // 获取统计数据
-        const response = await window.stats.getStats();
-        if (response && response.success && response.stats) {
-          setStats({
-            processedImages: response.stats.totalProcessedImages || 0,
-            savedSpace: formatFileSize(response.stats.totalSavedSpace || 0),
-            compressionRate: response.stats.averageCompressionRate || '0%',
-            todayProcessed: response.todayStats?.processedImages || 0
-          });
+        setLoading(true);
+        setError(null);
+        
+        // 检查window.stats是否存在
+        if (!window.stats) {
+          throw new Error('window.stats API不可用');
         }
         
-        // 获取最近处理的图片
-        const recentResponse = await window.stats.getRecentImages(4);
+        logInfo('调用window.stats.getStats()');
+        // 同时请求统计数据和最近图片
+        const [statsResponse, recentResponse] = await Promise.all([
+          window.stats.getStats(),
+          window.stats.getRecentImages(4)
+        ]);
+        
+        // 确保组件仍然挂载
+        if (!isMounted) {
+          logInfo('组件已卸载，取消后续操作');
+          return;
+        }
+        
+        logInfo('获取到统计数据', statsResponse);
+        // 处理统计数据
+        if (statsResponse && statsResponse.success && statsResponse.stats) {
+          setStats({
+            processedImages: statsResponse.stats.totalProcessedImages || 0,
+            savedSpace: formatFileSize(statsResponse.stats.totalSavedSpace || 0),
+            compressionRate: statsResponse.stats.averageCompressionRate || '0%',
+            todayProcessed: statsResponse.todayStats?.processedImages || 0
+          });
+        } else {
+          logError('统计数据响应格式不正确', statsResponse);
+        }
+        
+        logInfo('获取到最近图片数据', { count: recentResponse?.images?.length || 0 });
+        // 处理最近图片数据
         if (recentResponse && recentResponse.success && Array.isArray(recentResponse.images)) {
           const formattedImages: ImageItem[] = [];
           
           // 处理每张图片
           for (const img of recentResponse.images) {
             try {
+              logInfo('获取图片缩略图', { id: img.id, path: img.outputPath });
               // 获取缩略图
               const thumbnail = await window.electron.ipcRenderer.invoke('get-image-data-url', img.outputPath);
+              
+              if (!isMounted) {
+                logInfo('组件已卸载，取消后续操作');
+                return;
+              }
               
               formattedImages.push({
                 id: img.id,
@@ -64,34 +114,55 @@ export default function HomePage() {
                 outputPath: img.outputPath
               });
             } catch (error) {
-              console.error('获取缩略图失败:', error);
+              logError('获取缩略图失败', error);
             }
           }
           
-          setRecentImages(formattedImages);
+          if (isMounted) {
+            logInfo('设置最近图片数据', { count: formattedImages.length });
+            setRecentImages(formattedImages);
+          }
+        } else {
+          logError('最近图片数据响应格式不正确', recentResponse);
         }
       } catch (error) {
-        console.error('加载统计数据失败:', error);
+        logError('加载统计数据失败', error);
         // 错误时使用默认值
-        setStats({
-          processedImages: 0,
-          savedSpace: '0 MB',
-          compressionRate: '0%',
-          todayProcessed: 0
-        });
+        if (isMounted) {
+          setStats({
+            processedImages: 0,
+            savedSpace: '0 MB',
+            compressionRate: '0%',
+            todayProcessed: 0
+          });
+          setError(error instanceof Error ? error.message : '加载数据失败');
+        }
+      } finally {
+        if (isMounted) {
+          logInfo('完成数据加载');
+          setLoading(false);
+        }
       }
     };
     
+    // 立即执行加载函数
     loadStats();
-  }, []);
+    
+    // 清理函数
+    return () => {
+      logInfo('HomePage组件卸载');
+      isMounted = false;
+    };
+  }, []); // 空依赖数组，只在组件挂载时执行一次
 
   // 打开文件位置
   const openFileLocation = async (filePath: string) => {
     try {
+      logInfo('打开文件位置', { filePath });
       // 使用electron的shell.showItemInFolder方法打开文件所在位置
       await window.electron.ipcRenderer.invoke('show-item-in-folder', filePath);
     } catch (error) {
-      console.error('打开文件位置失败:', error);
+      logError('打开文件位置失败', error);
       alert('打开文件位置失败');
     }
   };
@@ -100,7 +171,66 @@ export default function HomePage() {
   const reprocessImage = (image: ImageItem) => {
     // 导航到处理页面并传递图片信息
     // 这里可以根据实际需求实现
-    console.log('重新处理图片:', image);
+    logInfo('重新处理图片', image);
+  };
+
+  // 手动刷新数据
+  const refreshData = () => {
+    logInfo('手动刷新数据');
+    setLoading(true);
+    setError(null);
+    
+    // 重新加载数据
+    Promise.all([
+      window.stats.getStats(),
+      window.stats.getRecentImages(4)
+    ])
+    .then(([statsResponse, recentResponse]) => {
+      logInfo('手动刷新数据成功');
+      
+      // 处理统计数据
+      if (statsResponse && statsResponse.success && statsResponse.stats) {
+        setStats({
+          processedImages: statsResponse.stats.totalProcessedImages || 0,
+          savedSpace: formatFileSize(statsResponse.stats.totalSavedSpace || 0),
+          compressionRate: statsResponse.stats.averageCompressionRate || '0%',
+          todayProcessed: statsResponse.todayStats?.processedImages || 0
+        });
+      }
+      
+      // 处理最近图片数据
+      if (recentResponse && recentResponse.success && Array.isArray(recentResponse.images)) {
+        Promise.all(recentResponse.images.map(async (img) => {
+          try {
+            const thumbnail = await window.electron.ipcRenderer.invoke('get-image-data-url', img.outputPath);
+            return {
+              id: img.id,
+              name: img.name,
+              thumbnail,
+              originalSize: formatFileSize(img.originalSize),
+              compressedSize: formatFileSize(img.compressedSize),
+              compressionRate: img.compressionRate,
+              date: new Date(img.processedAt).toLocaleString(),
+              outputPath: img.outputPath
+            };
+          } catch (error) {
+            logError('获取缩略图失败', error);
+            return null;
+          }
+        }))
+        .then((images) => {
+          setRecentImages(images.filter(Boolean) as ImageItem[]);
+          setLoading(false);
+        });
+      } else {
+        setLoading(false);
+      }
+    })
+    .catch(err => {
+      logError('手动刷新数据失败', err);
+      setError(err instanceof Error ? err.message : '刷新数据失败');
+      setLoading(false);
+    });
   };
 
   return (
@@ -193,32 +323,65 @@ export default function HomePage() {
       
       {/* 使用统计 */}
       <div className="mt-10 bg-accent/50 rounded-xl p-6">
-        <h3 className="text-xl font-semibold mb-4 text-foreground">使用统计</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-background rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-primary">{stats.processedImages}</div>
-            <div className="text-sm text-muted-foreground">已处理图片</div>
-          </div>
-          <div className="bg-background rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-primary">{stats.savedSpace}</div>
-            <div className="text-sm text-muted-foreground">节省空间</div>
-          </div>
-          <div className="bg-background rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-primary">{stats.compressionRate}</div>
-            <div className="text-sm text-muted-foreground">平均压缩率</div>
-          </div>
-          <div className="bg-background rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-primary">{stats.todayProcessed}</div>
-            <div className="text-sm text-muted-foreground">今日处理</div>
-          </div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold text-foreground">使用统计</h3>
+          {error ? (
+            <button 
+              onClick={refreshData}
+              className="text-sm px-3 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+            >
+              重试
+            </button>
+          ) : (
+            <button 
+              onClick={refreshData}
+              className="text-sm px-3 py-1 border border-primary text-primary rounded hover:bg-primary/10 transition-colors"
+              disabled={loading}
+            >
+              刷新
+            </button>
+          )}
         </div>
+        
+        {error ? (
+          <div className="p-4 bg-red-50 text-red-500 rounded-lg text-center">
+            加载数据失败: {error}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-background rounded-lg p-4 text-center shadow-sm">
+              <div className="text-2xl font-bold text-primary">{loading ? '...' : stats.processedImages}</div>
+              <div className="text-sm text-muted-foreground">已处理图片</div>
+            </div>
+            <div className="bg-background rounded-lg p-4 text-center shadow-sm">
+              <div className="text-2xl font-bold text-primary">{loading ? '...' : stats.savedSpace}</div>
+              <div className="text-sm text-muted-foreground">节省空间</div>
+            </div>
+            <div className="bg-background rounded-lg p-4 text-center shadow-sm">
+              <div className="text-2xl font-bold text-primary">{loading ? '...' : stats.compressionRate}</div>
+              <div className="text-sm text-muted-foreground">平均压缩率</div>
+            </div>
+            <div className="bg-background rounded-lg p-4 text-center shadow-sm">
+              <div className="text-2xl font-bold text-primary">{loading ? '...' : stats.todayProcessed}</div>
+              <div className="text-sm text-muted-foreground">今日处理</div>
+            </div>
+          </div>
+        )}
       </div>
       
       {/* 最近处理 */}
       <div className="mt-10">
         <h3 className="text-xl font-semibold mb-4 text-foreground">最近处理</h3>
         <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
-          {recentImages.length > 0 ? (
+          {loading ? (
+            <div className="p-8 text-center text-muted-foreground">
+              加载中...
+            </div>
+          ) : error ? (
+            <div className="p-8 text-center text-muted-foreground">
+              加载失败，请刷新重试
+            </div>
+          ) : recentImages.length > 0 ? (
             recentImages.map((image) => (
               <div key={image.id} className="flex items-center p-4 border-b border-border last:border-b-0 hover:bg-accent/30 transition-colors">
                 <img 
@@ -226,6 +389,7 @@ export default function HomePage() {
                   alt={image.name} 
                   className="w-12 h-12 object-cover rounded-md mr-4" 
                   onError={(e) => {
+                    logError('图片加载失败', { src: image.thumbnail });
                     (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'%3E%3C/circle%3E%3Cpolyline points='21 15 16 10 5 21'%3E%3C/polyline%3E%3C/svg%3E`;
                   }}
                 />

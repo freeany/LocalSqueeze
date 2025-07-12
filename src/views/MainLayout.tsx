@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { MoonIcon, SunIcon } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import Sidebar from '../components/Sidebar';
-import iconImage from '../assets/icon.png';
+import iconImage from '../assets/icon.svg';
 
 export default function MainLayout() {
   const [isDarkMode, setIsDarkMode] = useState(false);
