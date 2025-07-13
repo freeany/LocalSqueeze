@@ -27,3 +27,9 @@ release
 *.sw?
 
 /dist-app
+/dist-electron
+/out
+/dist
+/release
+/docs
+/prototype
