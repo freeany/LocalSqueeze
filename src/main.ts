@@ -6,21 +6,6 @@ import { existsSync } from 'fs'; // 添加同步版本的fs
 import os from 'os';
 import { initAllHandlers } from './server/ipc';
 
-// 确保Sharp正确加载
-try {
-  // 尝试预加载Sharp
-  const sharpPath = path.join(app.getAppPath(), 'node_modules', 'sharp');
-  if (existsSync(sharpPath)) {
-    console.log('Sharp模块路径存在:', sharpPath);
-    // 在应用启动时预加载Sharp
-    require('sharp');
-    console.log('Sharp模块加载成功');
-  } else {
-    console.error('Sharp模块路径不存在:', sharpPath);
-  }
-} catch (error) {
-  console.error('加载Sharp模块失败:', error);
-}
 
 // 声明Electron Forge Vite插件注入的全局变量
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
@@ -49,24 +34,6 @@ const imagePathCache = new Map<string, string>();
 // 声明全局变量以保存对主窗口的引用
 let mainWindow: BrowserWindow | null = null;
 
-// 获取预加载脚本路径
-const getPreloadPath = () => {
-  // 开发环境下的路径
-  const devPath = path.join(__dirname, '../preload/preload.js');
-  // 生产环境下的路径
-  const prodPath = path.join(__dirname, '../preload/preload.js');
-  
-  console.log('检查预加载脚本路径:');
-  console.log('- 开发环境路径:', devPath, existsSync(devPath) ? '存在' : '不存在');
-  console.log('- 生产环境路径:', prodPath, existsSync(prodPath) ? '存在' : '不存在');
-  
-  // 根据环境选择正确的路径
-  const preloadPath = app.isPackaged ? prodPath : devPath;
-  console.log('选择的预加载脚本路径:', preloadPath);
-  
-  return preloadPath;
-};
-
 const createWindow = () => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -74,7 +41,7 @@ const createWindow = () => {
     height: 600,
     icon: path.join(__dirname, '../assets/icons/icon.png'),
     webPreferences: {
-      preload: getPreloadPath(),
+      preload:  path.join(__dirname, 'preload.js'),
       // 添加以下配置以禁用自动填充功能
       spellcheck: false,
       // 确保上下文隔离
@@ -93,69 +60,29 @@ const createWindow = () => {
   // 打开开发者工具
   mainWindow.webContents.openDevTools();
 
-  // 加载应用
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL && process.env.NODE_ENV !== 'production') {
-    // 开发模式：加载Vite开发服务器URL
+  // and load the index.html of the app.
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
-    console.log('加载开发服务器URL:', MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    // 生产模式：加载打包后的HTML文件
-    const indexPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`);
-    console.log('加载生产环境HTML:', indexPath);
-    
-    // 检查文件是否存在
-    if (existsSync(indexPath)) {
-      mainWindow.loadFile(indexPath);
-    } else {
-      // 尝试备用路径
-      const alternativePath = path.join(__dirname, '../renderer/index.html');
-      console.log('尝试备用路径:', alternativePath);
-      
-      if (existsSync(alternativePath)) {
-        mainWindow.loadFile(alternativePath);
-      } else {
-        // 再尝试一个路径
-        const fallbackPath = path.join(app.getAppPath(), 'dist/index.html');
-        console.log('尝试最终备用路径:', fallbackPath);
-        mainWindow.loadFile(fallbackPath);
-      }
-    }
+    mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
-  
-  // 阻止导航到外部URL
-  mainWindow.webContents.on('will-navigate', (event, url) => {
-    // 检查URL是否为localhost或开发服务器URL
-    if (app.isPackaged && (url.includes('localhost') || url.includes('127.0.0.1'))) {
-      console.log('阻止导航到开发服务器URL:', url);
-      event.preventDefault();
-    }
-  });
 
-  // 阻止创建新窗口
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    // 检查URL是否为localhost或开发服务器URL
-    if (app.isPackaged && (url.includes('localhost') || url.includes('127.0.0.1'))) {
-      console.log('阻止打开开发服务器URL:', url);
-      return { action: 'deny' };
-    }
-    return { action: 'allow' };
-  });
-  
   // 监听页面加载完成事件
   mainWindow.webContents.on('did-finish-load', () => {
     console.log('页面加载完成');
   });
-  
+
   // 监听渲染进程错误
   mainWindow.webContents.on('render-process-gone', (event, details) => {
     console.error('渲染进程崩溃:', details.reason);
   });
-  
+
   // 监听页面崩溃
   mainWindow.webContents.on('crashed' as any, () => {
     console.error('页面崩溃');
   });
-};
+}
+
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -163,7 +90,7 @@ const createWindow = () => {
 app.on('ready', async () => {
   await ensureTempDir();
   initAllHandlers(); // 初始化所有IPC处理程序
-  
+
   // 注册自定义协议，用于安全地加载本地文件
   protocol.registerFileProtocol('app-image', (request, callback) => {
     try {
@@ -172,14 +99,14 @@ app.on('ready', async () => {
       // 解码文件ID
       const decodedId = decodeURIComponent(fileId);
       console.log(`请求图片ID: ${decodedId}`);
-      
+
       // 从缓存中获取实际文件路径
       const filePath = imagePathCache.get(decodedId);
       if (!filePath) {
         console.error(`未找到图片路径: ${decodedId}`);
         return callback({ error: -2 });
       }
-      
+
       console.log(`加载图片: ${filePath}`);
       callback({ path: filePath });
     } catch (error) {
@@ -187,24 +114,24 @@ app.on('ready', async () => {
       callback({ error: -2 });
     }
   });
-  
+
   // 注册保存临时文件的处理程序
   ipcMain.handle('save-temp-file', async (_, args) => {
     try {
       const { filename, data } = args;
-      
+
       // 生成安全的文件名，避免中文和特殊字符问题
-      const safeFilename = Date.now() + '_' + Math.floor(Math.random() * 10000) + '_' + 
+      const safeFilename = Date.now() + '_' + Math.floor(Math.random() * 10000) + '_' +
         filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-      
+
       // 确保临时目录存在
       await fs.mkdir(TEMP_DIR, { recursive: true });
-      
+
       const tempFilePath = path.join(TEMP_DIR, safeFilename);
-      
+
       // 将Buffer写入文件
       await fs.writeFile(tempFilePath, Buffer.from(data));
-      
+
       console.log(`文件已保存到: ${tempFilePath}`);
       return tempFilePath;
     } catch (error) {
@@ -213,7 +140,7 @@ app.on('ready', async () => {
       throw new Error(`保存临时文件失败: ${error.message || '未知错误'}`);
     }
   });
-  
+
   // 注册获取图片URL的处理程序
   ipcMain.handle('get-image-url', (_, filePath) => {
     try {
@@ -222,13 +149,13 @@ app.on('ready', async () => {
         console.error(`文件不存在: ${filePath}`);
         return '';
       }
-      
+
       // 为文件生成一个唯一ID
       const fileId = Date.now() + '_' + Math.floor(Math.random() * 1000000);
-      
+
       // 将文件路径存储在缓存中
       imagePathCache.set(fileId, filePath);
-      
+
       // 返回自定义协议URL
       const url = `app-image://${fileId}`;
       console.log(`为文件 ${filePath} 生成URL: ${url}`);
@@ -238,7 +165,7 @@ app.on('ready', async () => {
       return '';
     }
   });
-  
+
   // 注册读取图片为Data URL的处理程序
   ipcMain.handle('get-image-data-url', async (_, filePath) => {
     try {
@@ -248,10 +175,10 @@ app.on('ready', async () => {
         // 返回一个默认的图片数据
         return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiI+PC9yZWN0PjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ij48L2NpcmNsZT48cG9seWxpbmUgcG9pbnRzPSIyMSAxNSAxNiAxMCA1IDIxIj48L3BvbHlsaW5lPjwvc3ZnPg==';
       }
-      
+
       // 读取文件
       const data = await fs.readFile(filePath);
-      
+
       // 检测文件类型
       let mimeType = 'image/png'; // 默认MIME类型
       if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
@@ -261,10 +188,10 @@ app.on('ready', async () => {
       } else if (filePath.endsWith('.gif')) {
         mimeType = 'image/gif';
       }
-      
+
       // 转换为Base64
       const base64Data = data.toString('base64');
-      
+
       // 返回Data URL
       return `data:${mimeType};base64,${base64Data}`;
     } catch (error) {
@@ -273,12 +200,12 @@ app.on('ready', async () => {
       return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiI+PC9yZWN0PjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ij48L2NpcmNsZT48cG9seWxpbmUgcG9pbnRzPSIyMSAxNSAxNiAxMCA1IDIxIj48L3BvbHlsaW5lPjwvc3ZnPg==';
     }
   });
-  
+
   // 注册保存文件的处理程序
   ipcMain.handle('save-file', async (_, args) => {
     try {
       const { sourcePath, suggestedName } = args;
-      
+
       // 打开保存对话框
       const result = await dialog.showSaveDialog({
         defaultPath: suggestedName,
@@ -287,20 +214,20 @@ app.on('ready', async () => {
           { name: '所有文件', extensions: ['*'] }
         ]
       });
-      
+
       if (!result.canceled && result.filePath) {
         // 复制文件
         await fs.copyFile(sourcePath, result.filePath);
         return { success: true, path: result.filePath };
       }
-      
+
       return { success: false, reason: 'User canceled' };
     } catch (error) {
       console.error('保存文件失败:', error);
       return { success: false, error: error.message };
     }
   });
-  
+
   // 注册打开文件的处理程序
   ipcMain.handle('open-file', async (_, filePath) => {
     try {
@@ -312,7 +239,7 @@ app.on('ready', async () => {
       return { success: false, error: error.message };
     }
   });
-  
+
   // 注册在文件管理器中显示文件的处理程序
   ipcMain.handle('show-item-in-folder', async (_, filePath) => {
     try {
@@ -324,25 +251,25 @@ app.on('ready', async () => {
       return { success: false, error: error.message };
     }
   });
-  
+
   // 注册导出所有文件的处理程序
   ipcMain.handle('export-all-files', async (_, args) => {
     try {
       const { files, outputDir } = args;
-      
+
       for (const filePath of files) {
         const fileName = path.basename(filePath);
         const destPath = path.join(outputDir, fileName);
         await fs.copyFile(filePath, destPath);
       }
-      
+
       return { success: true };
     } catch (error) {
       console.error('导出文件失败:', error);
       return { success: false, error: error.message };
     }
   });
-  
+
   createWindow();
 });
 

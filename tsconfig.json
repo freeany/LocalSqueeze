@@ -1,23 +1,19 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "ESNext",
+    "module": "commonjs",
     "allowJs": true,
     "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
     "esModuleInterop": true,
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "sourceMap": true,
     "baseUrl": ".",
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM"],
     "paths": {
       "@/*": ["src/*"]
     }
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  }
 }
