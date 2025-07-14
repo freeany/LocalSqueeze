@@ -122,7 +122,9 @@ export default function CompressionSettings() {
     
     // 如果有输出格式
     if (!settings.keepFormat && settings.outputFormat) {
+      // 在UI中显示大写的格式名称
       setOutputFormat(settings.outputFormat.toUpperCase());
+      console.log(`设置输出格式为: ${settings.outputFormat.toUpperCase()}`);
     }
   };
 
@@ -195,7 +197,7 @@ export default function CompressionSettings() {
         optimizeColors: preset === '中等压缩' || preset === '高压缩' ? true : advancedOptions.optimizeColors,
         progressive: preset === '中等压缩' || preset === '高压缩' ? true : advancedOptions.progressive,
         keepFormat,
-        outputFormat,
+        outputFormat: outputFormat.toLowerCase(), // 确保保存小写的格式名称
         fileNaming,
         fileExtension
       };
@@ -303,7 +305,9 @@ export default function CompressionSettings() {
   
   // 处理输出格式变化
   const handleOutputFormatChange = (format: string) => {
-    setOutputFormat(format);
+    // 在UI中显示大写格式
+    setOutputFormat(format.toUpperCase());
+    console.log(`输出格式变更为: ${format.toUpperCase()} (保存为小写)`);
     
     // 更新预览
     generatePreview();
@@ -382,10 +386,12 @@ export default function CompressionSettings() {
         optimizeColors: advancedOptions.optimizeColors,
         progressive: advancedOptions.progressive,
         keepFormat,
-        outputFormat,
+        outputFormat: outputFormat.toLowerCase(), // 确保保存小写的格式名称
         fileNaming,
         fileExtension
       };
+      
+      console.log('保存设置到配置文件，输出格式:', settings.outputFormat);
       
       // 检查是否只有文件命名或扩展名变更
       const savedSettingsData = await getCompressionSettings();
@@ -426,7 +432,7 @@ export default function CompressionSettings() {
       width: dimensions.width,
       height: dimensions.height,
       keepFormat,
-      outputFormat,
+      outputFormat: outputFormat.toLowerCase(), // 确保使用小写格式
       removeMetadata: advancedOptions.removeMetadata,
       optimizeColors: advancedOptions.optimizeColors,
       progressive: advancedOptions.progressive,

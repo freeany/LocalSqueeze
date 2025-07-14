@@ -189,7 +189,9 @@ export function buildCompressionSettings(settings: any): CompressionSettings {
   }
   
   if (!compressionSettings.keepFormat) {
-    (compressionSettings as any).outputFormat = settings.outputFormat || 'PNG';
+    // 确保输出格式是小写的
+    (compressionSettings as any).outputFormat = settings.outputFormat ? settings.outputFormat.toLowerCase() : 'png';
+    console.log(`构建压缩设置，输出格式: ${(compressionSettings as any).outputFormat}`);
   }
   
   // 添加文件命名设置
