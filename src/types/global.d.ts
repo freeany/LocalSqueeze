@@ -12,6 +12,11 @@ export interface CompressionSettings {
   removeMetadata: boolean;
   optimizeColors: boolean;
   progressive: boolean;
+  fileNaming?: string;
+  fileExtension?: string;
+  width?: number;
+  height?: number;
+  outputFormat?: string;
 }
 
 // 压缩结果接口

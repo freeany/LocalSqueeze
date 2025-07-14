@@ -27,7 +27,7 @@ import {
   convertToWebp,
   getDefaultWebpSettings 
 } from '../compression/webp';
-import { formatFileSize, getFileExtension } from '../../lib/utils';
+import { formatFileSize, getFileExtension, generateOutputFileName } from '../../lib/utils';
 
 // 临时目录路径
 const TEMP_DIR = path.join(os.tmpdir(), 'imgs-compress');
@@ -71,20 +71,22 @@ export function initCompressionHandlers() {
       
       console.log(`[IPC] 单张压缩请求: ${imagePath}`);
       console.log(`[IPC] 单张压缩参数:`, JSON.stringify(settings, null, 2));
+      console.log(`[IPC] 文件命名设置:`, {
+        fileNaming: (settings as any).fileNaming,
+        fileExtension: (settings as any).fileExtension
+      });
       
       // 如果没有指定输出路径，则使用临时目录
       if (!outputPath) {
-        const fileName = path.basename(imagePath);
-        const fileExt = path.extname(fileName);
-        const fileNameWithoutExt = path.basename(fileName, fileExt);
+        // 使用命名模板生成文件名
+        const fileName = generateOutputFileName(
+          imagePath,
+          (settings as any).fileNaming,
+          (settings as any).fileExtension,
+          !settings.keepFormat && (settings as any).outputFormat ? (settings as any).outputFormat.toLowerCase() : undefined
+        );
         
-        // 确定输出格式
-        let outputExt = fileExt;
-        if (!settings.keepFormat && settings.outputFormat) {
-          outputExt = `.${settings.outputFormat.toLowerCase()}`;
-        }
-        
-        outputPath = path.join(TEMP_DIR, `${fileNameWithoutExt}_compressed${outputExt}`);
+        outputPath = path.join(TEMP_DIR, fileName);
         console.log(`[IPC] 单张压缩输出路径: ${outputPath}`);
       }
       
@@ -166,17 +168,15 @@ export function initCompressionHandlers() {
       const total = imagePaths.length;
       
       for (const imagePath of imagePaths) {
-        const fileName = path.basename(imagePath);
-        const fileExt = path.extname(fileName);
-        const fileNameWithoutExt = path.basename(fileName, fileExt);
+        // 使用命名模板生成文件名
+        const fileName = generateOutputFileName(
+          imagePath,
+          (settings as any).fileNaming,
+          (settings as any).fileExtension,
+          !settings.keepFormat && (settings as any).outputFormat ? (settings as any).outputFormat.toLowerCase() : undefined
+        );
         
-        // 确定输出格式
-        let outputExt = fileExt;
-        if (!settings.keepFormat && settings.outputFormat) {
-          outputExt = `.${settings.outputFormat.toLowerCase()}`;
-        }
-        
-        const outputPath = path.join(outputDir, `${fileNameWithoutExt}_compressed${outputExt}`);
+        const outputPath = path.join(outputDir, fileName);
         
         console.log(`[IPC] 批量处理文件 ${++current}/${total}: ${imagePath} -> ${outputPath}`);
         

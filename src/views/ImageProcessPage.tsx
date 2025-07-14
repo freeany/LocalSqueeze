@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Upload, Download, Eye } from 'lucide-react';
-import { formatFileSize, calculateCompressionRate } from '../lib/utils';
+import { formatFileSize, calculateCompressionRate, getCompressionSettings, buildCompressionSettings } from '../lib/utils';
 // eslint-disable-next-line import/no-unresolved
 import { CompressionSettings, CompressionResult } from '../types/global';
 
@@ -40,6 +40,26 @@ export default function ImageProcessPage() {
     optimizeColors: false,
     progressive: false
   });
+  
+  // 加载保存的压缩设置
+  useEffect(() => {
+    try {
+      // 从本地存储获取保存的设置
+      const savedSettings = getCompressionSettings();
+      console.log('ImageProcessPage组件加载设置:', savedSettings);
+      console.log('文件命名设置:', savedSettings.fileNaming, savedSettings.fileExtension);
+      
+      // 构建压缩设置对象
+      const settings = buildCompressionSettings(savedSettings);
+      console.log('构建的压缩设置对象:', settings);
+      console.log('构建后的文件命名设置:', (settings as any).fileNaming, (settings as any).fileExtension);
+      
+      // 更新压缩设置状态
+      setCompressionSettings(settings);
+    } catch (error) {
+      console.error('加载压缩设置失败:', error);
+    }
+  }, []);
   
   // 监听压缩进度更新
   useEffect(() => {
@@ -128,14 +148,23 @@ export default function ImageProcessPage() {
     setProcessingProgress({ current: 0, total: unprocessedFiles.length });
     
     try {
+      // 获取最新的压缩设置
+      const savedSettings = getCompressionSettings();
+      console.log('处理图片时获取的设置:', savedSettings);
+      console.log('文件命名设置:', savedSettings.fileNaming, savedSettings.fileExtension);
+      
+      const currentSettings = buildCompressionSettings(savedSettings);
+      console.log('处理图片时构建的设置:', currentSettings);
+      console.log('构建后的文件命名设置:', (currentSettings as any).fileNaming, (currentSettings as any).fileExtension);
+      
       // 将File对象转换为临时文件路径
       const filePaths: string[] = [];
-      const fileReaders: Promise<{path: string, error?: string}>[] = [];
+      const fileReaders: Promise<{path: string, originalFilename?: string, error?: string}>[] = [];
       
       // 创建文件读取Promise，只处理未处理的文件
       for (const file of unprocessedFiles) {
         fileReaders.push(
-          new Promise<{path: string, error?: string}>((resolve) => {
+          new Promise<{path: string, originalFilename?: string, error?: string}>((resolve) => {
             try {
               const reader = new FileReader();
               
@@ -143,11 +172,11 @@ export default function ImageProcessPage() {
                 try {
                   if (e.target && e.target.result) {
                     // 将文件内容发送到主进程，保存为临时文件
-                    const tempPath = await window.electron.ipcRenderer.invoke('save-temp-file', {
+                    const result = await window.electron.ipcRenderer.invoke('save-temp-file', {
                       filename: file.name,
                       data: e.target.result
                     });
-                    resolve({ path: tempPath });
+                    resolve({ path: result.path, originalFilename: result.originalFilename });
                   } else {
                     resolve({ path: '', error: '读取文件内容失败' });
                   }
@@ -180,8 +209,14 @@ export default function ImageProcessPage() {
         alert(`部分文件处理失败:\n${errors.map(e => e.error).join('\n')}`);
       }
       
-      // 过滤出成功的路径
+      // 过滤出成功的路径和原始文件名的映射
       const validPaths = results.filter(r => r.path).map(r => r.path);
+      const originalFilenames = new Map<string, string>();
+      results.forEach(r => {
+        if (r.path && r.originalFilename) {
+          originalFilenames.set(r.path, r.originalFilename);
+        }
+      });
       
       if (validPaths.length === 0) {
         throw new Error('没有有效的文件可以处理');
@@ -199,7 +234,7 @@ export default function ImageProcessPage() {
           // 根据文件数量决定使用单张处理还是批量处理
           if (validPaths.length === 1) {
             // 单张图片处理 - 直接保存到临时目录
-            const singleResult = await window.compression.compressImage(validPaths[0], { ...compressionSettings });
+            const singleResult = await window.compression.compressImage(validPaths[0], currentSettings);
             // 将单个结果转换为与批量处理相同的格式
             result = {
               success: true,
@@ -207,7 +242,7 @@ export default function ImageProcessPage() {
             };
           } else {
             // 批量处理 - 保存到子文件夹
-            result = await window.compression.batchCompressImages(validPaths, { ...compressionSettings });
+            result = await window.compression.batchCompressImages(validPaths, currentSettings);
           }
         } else {
           // 使用通用IPC调用
@@ -215,7 +250,7 @@ export default function ImageProcessPage() {
             // 单张图片处理
             const singleResult = await window.electron.ipcRenderer.invoke('compress-image', {
               imagePath: validPaths[0],
-              settings: { ...compressionSettings }
+              settings: currentSettings
             });
             result = {
               success: true,
@@ -225,7 +260,7 @@ export default function ImageProcessPage() {
             // 批量处理
             result = await window.electron.ipcRenderer.invoke('batch-compress-images', {
               imagePaths: validPaths,
-              settings: { ...compressionSettings }
+              settings: currentSettings
             });
           }
         }
@@ -241,11 +276,14 @@ export default function ImageProcessPage() {
             // 获取本地图片URL
             const imageUrl = await window.electron.ipcRenderer.invoke('get-image-data-url', item.outputPath);
             
+            // 获取原始文件名，如果没有则使用路径中的文件名
+            const originalFilename = originalFilenames.get(item.originalPath) || getBasename(item.originalPath);
+            
             // 添加处理记录到统计数据
             try {
               await window.stats.addProcessedImage({
                 id: Math.random().toString(36).substr(2, 9),
-                name: getBasename(item.originalPath),
+                name: originalFilename,
                 originalPath: item.originalPath,
                 outputPath: item.outputPath,
                 originalSize: item.originalSize,
@@ -262,7 +300,7 @@ export default function ImageProcessPage() {
             
             return {
               id: Math.random().toString(36).substr(2, 9),
-              name: getBasename(item.originalPath),
+              name: originalFilename,
               thumbnail: imageUrl, // 使用data URL
               originalSize: formatFileSize(item.originalSize),
               compressedSize: formatFileSize(item.compressedSize),
@@ -273,11 +311,14 @@ export default function ImageProcessPage() {
               outputPath: item.outputPath
             };
           } catch (error) {
+            // 获取原始文件名，如果没有则使用路径中的文件名
+            const originalFilename = originalFilenames.get(item.originalPath) || getBasename(item.originalPath);
+            
             console.error(`处理结果 ${item.originalPath} 失败:`, error);
             // 返回带有错误状态的结果
             return {
               id: Math.random().toString(36).substr(2, 9),
-              name: getBasename(item.originalPath),
+              name: originalFilename,
               thumbnail: '',
               originalSize: formatFileSize(item.originalSize),
               compressedSize: formatFileSize(item.compressedSize),
@@ -339,6 +380,7 @@ export default function ImageProcessPage() {
   // 下载处理后的文件
   const downloadFile = async (outputPath: string, fileName: string) => {
     try {
+      // 使用原始文件名作为建议名称
       await window.electron.ipcRenderer.invoke('save-file', {
         sourcePath: outputPath,
         suggestedName: fileName

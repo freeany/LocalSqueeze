@@ -133,7 +133,11 @@ app.on('ready', async () => {
       await fs.writeFile(tempFilePath, Buffer.from(data));
 
       console.log(`文件已保存到: ${tempFilePath}`);
-      return tempFilePath;
+      // 返回临时文件路径和原始文件名
+      return {
+        path: tempFilePath,
+        originalFilename: filename
+      };
     } catch (error) {
       console.error('保存临时文件失败:', error);
       // 返回详细的错误信息
