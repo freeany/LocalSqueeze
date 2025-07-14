@@ -58,6 +58,18 @@ const compressionAPI = {
       logInfo('移除压缩进度监听器');
       ipcRenderer.removeAllListeners('compression-progress');
     };
+  },
+  
+  // 保存压缩设置到配置文件
+  saveCompressionSettings: (settings: any) => {
+    logInfo('调用saveCompressionSettings', settings);
+    return ipcRenderer.invoke('save-compression-settings', settings);
+  },
+  
+  // 从配置文件获取压缩设置
+  getCompressionSettings: () => {
+    logInfo('调用getCompressionSettings');
+    return ipcRenderer.invoke('get-compression-settings');
   }
 };
 
@@ -187,7 +199,9 @@ const validChannels = [
   'get-stats',
   'get-recent-images',
   'add-processed-image',
-  'clear-stats-data'
+  'clear-stats-data',
+  'save-compression-settings',
+  'get-compression-settings'
 ];
 
 // 暴露IPC通信API

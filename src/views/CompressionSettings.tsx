@@ -53,8 +53,8 @@ export default function CompressionSettings() {
       try {
         setIsLoading(true);
         
-        // 从本地存储加载上次的设置
-        const settings = getCompressionSettings();
+        // 从配置文件加载上次的设置
+        const settings = await getCompressionSettings();
         console.log('CompressionSettings组件加载设置:', settings);
         
         // 应用保存的设置
@@ -83,6 +83,18 @@ export default function CompressionSettings() {
       } catch (error) {
         console.error('加载压缩设置失败:', error);
         setIsLoading(false);
+        
+        // 如果加载失败，使用默认设置
+        setActivePreset('低压缩');
+        setCompressionQuality(70);
+        setKeepDimensions(true);
+        setDimensions({ width: 1920, height: 1080 });
+        setKeepRatio(true);
+        setAdvancedOptions({ removeMetadata: true, optimizeColors: false, progressive: false });
+        setKeepFormat(true);
+        setOutputFormat('PNG');
+        setFileNaming('{filename}_compressed');
+        setFileExtension('.{ext}');
       }
     };
     
@@ -189,7 +201,7 @@ export default function CompressionSettings() {
       };
       
       console.log('直接保存预设设置:', settings);
-      saveCompressionSettings(settings);
+      await saveCompressionSettings(settings);
       
     } catch (error) {
       console.error(`应用预设 ${preset} 失败:`, error);
@@ -351,8 +363,8 @@ export default function CompressionSettings() {
     }
   };
 
-  // 保存当前设置到本地存储
-  const saveCurrentSettings = () => {
+  // 保存当前设置到配置文件
+  const saveCurrentSettings = async () => {
     try {
       // 获取当前最新状态
       console.log('当前预设:', activePreset);
@@ -376,7 +388,8 @@ export default function CompressionSettings() {
       };
       
       // 检查是否只有文件命名或扩展名变更
-      const savedSettings = getCompressionSettings();
+      const savedSettingsData = await getCompressionSettings();
+      const savedSettings = savedSettingsData;
       const isOnlyFileSettingsChanged = 
         savedSettings && 
         savedSettings.preset !== '自定义' &&
@@ -399,7 +412,7 @@ export default function CompressionSettings() {
       }
       
       console.log('保存设置:', settings);
-      saveCompressionSettings(settings);
+      await saveCompressionSettings(settings);
     } catch (error) {
       console.error('保存设置失败:', error);
     }

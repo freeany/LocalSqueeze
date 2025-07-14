@@ -94,31 +94,53 @@ export function generateOutputFileName(
 }
 
 /**
- * 保存压缩设置到本地存储
+ * 保存压缩设置到配置文件
  * @param settings 压缩设置
  */
-export function saveCompressionSettings(settings: any): void {
+export async function saveCompressionSettings(settings: any): Promise<void> {
   try {
-    const settingsString = JSON.stringify(settings);
-    console.log('保存设置到localStorage:', settingsString);
-    localStorage.setItem('compressionSettings', settingsString);
+    console.log('保存设置到配置文件:', settings);
+    if (window.compression && window.compression.saveCompressionSettings) {
+      const result = await window.compression.saveCompressionSettings(settings);
+      if (!result.success) {
+        console.error('保存压缩设置失败:', result.error);
+      }
+    } else {
+      // 如果Electron API不可用（例如在开发环境），回退到localStorage
+      const settingsString = JSON.stringify(settings);
+      console.log('Electron API不可用，保存设置到localStorage:', settingsString);
+      localStorage.setItem('compressionSettings', settingsString);
+    }
   } catch (error) {
     console.error('保存压缩设置失败:', error);
   }
 }
 
 /**
- * 从本地存储获取压缩设置
+ * 从配置文件获取压缩设置
  * @returns 压缩设置对象，如果没有则返回默认设置
  */
-export function getCompressionSettings(): any {
+export async function getCompressionSettings(): Promise<any> {
   try {
-    const savedSettings = localStorage.getItem('compressionSettings');
-    if (savedSettings) {
-      const settings = JSON.parse(savedSettings);
-      console.log('从本地存储加载的设置:', settings);
-      console.log('文件命名设置:', settings.fileNaming, settings.fileExtension);
-      return settings;
+    if (window.compression && window.compression.getCompressionSettings) {
+      console.log('从配置文件加载设置');
+      const result = await window.compression.getCompressionSettings();
+      if (result.success && result.settings) {
+        console.log('从配置文件加载的设置:', result.settings);
+        console.log('文件命名设置:', result.settings.fileNaming, result.settings.fileExtension);
+        return result.settings;
+      } else if (result.error) {
+        console.error('获取压缩设置失败:', result.error);
+      }
+    } else {
+      // 如果Electron API不可用（例如在开发环境），回退到localStorage
+      const savedSettings = localStorage.getItem('compressionSettings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        console.log('从localStorage加载的设置:', settings);
+        console.log('文件命名设置:', settings.fileNaming, settings.fileExtension);
+        return settings;
+      }
     }
   } catch (error) {
     console.error('获取压缩设置失败:', error);

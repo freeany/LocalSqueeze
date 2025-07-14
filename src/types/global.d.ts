@@ -92,6 +92,15 @@ declare global {
         current: number;
         total: number;
       }) => void) => () => void;
+      saveCompressionSettings: (settings: any) => Promise<{
+        success: boolean;
+        error?: string;
+      }>;
+      getCompressionSettings: () => Promise<{
+        success: boolean;
+        settings?: any;
+        error?: string;
+      }>;
     };
     stats: {
       getStats: () => Promise<{

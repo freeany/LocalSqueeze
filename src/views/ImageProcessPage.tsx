@@ -333,7 +333,10 @@ export default function ImageProcessPage() {
         }));
         
         // 更新处理后的文件列表
-        setProcessedFiles(prev => [...prev, ...processed]);
+        
+        setProcessedFiles(prev => {
+          return [...prev, ...processed]
+        });
         
         // 更新已处理的文件名集合
         const newProcessedNames = new Set(processedFileNames);
