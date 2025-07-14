@@ -8,6 +8,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import { Worker } from 'worker_threads';
 import { CompressionSettings, CompressionResult } from './index';
+import { getFileExtension } from '../../lib/utils';
 
 // 默认并行处理的最大线程数
 const DEFAULT_MAX_WORKERS = Math.max(os.cpus().length - 1, 1);
@@ -48,11 +49,14 @@ export class BatchProcessor {
   addTask(inputPath: string, outputPath: string, settings: CompressionSettings): Promise<CompressionResult> {
     this.total++;
     
+    console.log(`[批量处理] 添加任务 #${this.total}: ${inputPath} -> ${outputPath}`);
+    console.log(`[批量处理] 任务 #${this.total} 压缩参数:`, JSON.stringify(settings, null, 2));
+    
     return new Promise<CompressionResult>((resolve, reject) => {
       this.queue.push({
         inputPath,
         outputPath,
-        settings,
+        settings: { ...settings }, // 使用对象展开运算符创建settings的深拷贝，避免引用问题
         resolve,
         reject
       });
@@ -67,6 +71,7 @@ export class BatchProcessor {
    */
   onProgress(callback: (current: number, total: number, result?: CompressionResult) => void): void {
     this.onProgressCallback = callback;
+    console.log(`[批量处理] 设置进度回调函数`);
   }
   
   /**
@@ -75,13 +80,17 @@ export class BatchProcessor {
    */
   async waitForAll(): Promise<CompressionResult[]> {
     if (this.queue.length === 0 && this.activeWorkers === 0) {
+      console.log(`[批量处理] 所有任务已完成，共 ${this.results.length} 个结果`);
       return this.results;
     }
+    
+    console.log(`[批量处理] 等待所有任务完成，队列中还有 ${this.queue.length} 个任务，活动工作线程 ${this.activeWorkers} 个`);
     
     return new Promise<CompressionResult[]>((resolve) => {
       const checkInterval = setInterval(() => {
         if (this.queue.length === 0 && this.activeWorkers === 0) {
           clearInterval(checkInterval);
+          console.log(`[批量处理] 所有任务已完成，共 ${this.results.length} 个结果`);
           resolve(this.results);
         }
       }, 100);
@@ -100,13 +109,15 @@ export class BatchProcessor {
     if (!task) return;
     
     this.activeWorkers++;
+    console.log(`[批量处理] 开始处理任务: ${task.inputPath}, 活动工作线程: ${this.activeWorkers}/${this.maxWorkers}`);
     
     // 创建工作线程
     const worker = new Worker(path.join(__dirname, '../workers/compression-worker.js'), {
       workerData: {
         inputPath: task.inputPath,
         outputPath: task.outputPath,
-        settings: task.settings
+        settings: JSON.parse(JSON.stringify(task.settings)), // 使用JSON序列化确保完全深拷贝
+        fileType: getFileExtension(task.inputPath) // 传递文件类型信息，确保工作线程使用正确的处理方法
       }
     });
     
@@ -117,6 +128,8 @@ export class BatchProcessor {
         const result = message.result as CompressionResult;
         this.results.push(result);
         
+        console.log(`[批量处理] 任务完成 (${this.completed}/${this.total}): ${task.inputPath}, 压缩率: ${result.compressionRate}`);
+        
         // 调用进度回调
         if (this.onProgressCallback) {
           this.onProgressCallback(this.completed, this.total, result);
@@ -126,6 +139,8 @@ export class BatchProcessor {
       } else if (message.status === 'error') {
         this.completed++;
         const error = new Error(message.error || '压缩失败');
+        
+        console.error(`[批量处理] 任务失败 (${this.completed}/${this.total}): ${task.inputPath}, 错误: ${message.error}`);
         
         // 创建错误结果
         const errorResult: CompressionResult = {
@@ -157,6 +172,8 @@ export class BatchProcessor {
     worker.on('error', (error) => {
       this.completed++;
       
+      console.error(`[批量处理] 工作线程错误 (${this.completed}/${this.total}): ${task.inputPath}, 错误: ${error.message}`);
+      
       // 创建错误结果
       const errorResult: CompressionResult = {
         success: false,
@@ -185,6 +202,8 @@ export class BatchProcessor {
     // 工作线程退出
     worker.on('exit', (code) => {
       this.activeWorkers--;
+      
+      console.log(`[批量处理] 工作线程退出 (代码: ${code}), 剩余活动工作线程: ${this.activeWorkers}`);
       
       // 继续处理队列
       this.processQueue();
@@ -231,8 +250,8 @@ export class BatchProcessor {
       // 构建输出文件路径
       const outputPath = path.join(outputDir, `${fileNameWithoutExt}_compressed${outputExt}`);
       
-      // 添加任务
-      processor.addTask(inputPath, outputPath, settings);
+      // 添加任务 - 传递settings的深拷贝
+      processor.addTask(inputPath, outputPath, { ...settings });
     }
     
     // 等待所有任务完成

@@ -69,6 +69,9 @@ export function initCompressionHandlers() {
       const { imagePath, settings } = args;
       let outputPath = args.outputPath;
       
+      console.log(`[IPC] 单张压缩请求: ${imagePath}`);
+      console.log(`[IPC] 单张压缩参数:`, JSON.stringify(settings, null, 2));
+      
       // 如果没有指定输出路径，则使用临时目录
       if (!outputPath) {
         const fileName = path.basename(imagePath);
@@ -82,15 +85,19 @@ export function initCompressionHandlers() {
         }
         
         outputPath = path.join(TEMP_DIR, `${fileNameWithoutExt}_compressed${outputExt}`);
+        console.log(`[IPC] 单张压缩输出路径: ${outputPath}`);
       }
       
       // 根据文件类型选择不同的压缩方法
       const fileExtension = getFileExtension(imagePath);
       let result: CompressionResult;
       
+      console.log(`[IPC] 单张压缩文件类型: ${fileExtension}`);
+      
       switch (fileExtension) {
         case 'jpg':
         case 'jpeg':
+          console.log(`[IPC] 使用JPEG专用压缩方法`);
           result = await compressJpeg(imagePath, outputPath, {
             ...getDefaultJpegSettings(),
             ...settings
@@ -98,6 +105,7 @@ export function initCompressionHandlers() {
           break;
           
         case 'png':
+          console.log(`[IPC] 使用PNG专用压缩方法`);
           result = await compressPng(imagePath, outputPath, {
             ...getDefaultPngSettings(),
             ...settings
@@ -105,6 +113,7 @@ export function initCompressionHandlers() {
           break;
           
         case 'webp':
+          console.log(`[IPC] 使用WebP专用压缩方法`);
           result = await compressWebp(imagePath, outputPath, {
             ...getDefaultWebpSettings(),
             ...settings
@@ -112,13 +121,16 @@ export function initCompressionHandlers() {
           break;
           
         default:
+          console.log(`[IPC] 使用通用压缩方法`);
           // 默认使用通用压缩方法
           result = await compressImage(imagePath, outputPath, settings);
       }
       
+      console.log(`[IPC] 单张压缩完成: ${imagePath}, 压缩率: ${result.compressionRate}`);
+      
       return result;
     } catch (error) {
-      console.error('压缩图片失败:', error);
+      console.error('[IPC] 压缩图片失败:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : '未知错误'
@@ -136,28 +148,89 @@ export function initCompressionHandlers() {
       const { imagePaths, settings } = args;
       let outputDir = args.outputDir;
       
+      console.log(`[IPC] 批量压缩请求: ${imagePaths.length} 个文件`);
+      console.log(`[IPC] 批量压缩参数:`, JSON.stringify(settings, null, 2));
+      
       // 如果没有指定输出目录，则使用临时目录
       if (!outputDir) {
         outputDir = path.join(TEMP_DIR, 'batch_' + Date.now());
+        console.log(`[IPC] 批量压缩输出目录: ${outputDir}`);
       }
       
       // 创建输出目录
       await fs.mkdir(outputDir, { recursive: true });
       
-      // 批量压缩图片
-      const results = await batchCompressImages(
-        imagePaths,
-        outputDir,
-        settings,
-        (current, total, result) => {
-          // 发送进度更新
-          event.sender.send('compression-progress', {
-            current,
-            total,
-            result
-          });
+      // 批量压缩图片 - 使用单张图片处理的逻辑，确保一致性
+      const results: CompressionResult[] = [];
+      let current = 0;
+      const total = imagePaths.length;
+      
+      for (const imagePath of imagePaths) {
+        const fileName = path.basename(imagePath);
+        const fileExt = path.extname(fileName);
+        const fileNameWithoutExt = path.basename(fileName, fileExt);
+        
+        // 确定输出格式
+        let outputExt = fileExt;
+        if (!settings.keepFormat && settings.outputFormat) {
+          outputExt = `.${settings.outputFormat.toLowerCase()}`;
         }
-      );
+        
+        const outputPath = path.join(outputDir, `${fileNameWithoutExt}_compressed${outputExt}`);
+        
+        console.log(`[IPC] 批量处理文件 ${++current}/${total}: ${imagePath} -> ${outputPath}`);
+        
+        // 使用与单张处理相同的逻辑，根据文件类型选择不同的压缩方法
+        const fileExtension = getFileExtension(imagePath);
+        let result: CompressionResult;
+        
+        console.log(`[IPC] 批量处理文件类型: ${fileExtension}`);
+        
+        switch (fileExtension) {
+          case 'jpg':
+          case 'jpeg':
+            console.log(`[IPC] 使用JPEG专用压缩方法 (批量)`);
+            result = await compressJpeg(imagePath, outputPath, {
+              ...getDefaultJpegSettings(),
+              ...settings
+            });
+            break;
+            
+          case 'png':
+            console.log(`[IPC] 使用PNG专用压缩方法 (批量)`);
+            result = await compressPng(imagePath, outputPath, {
+              ...getDefaultPngSettings(),
+              ...settings
+            });
+            break;
+            
+          case 'webp':
+            console.log(`[IPC] 使用WebP专用压缩方法 (批量)`);
+            result = await compressWebp(imagePath, outputPath, {
+              ...getDefaultWebpSettings(),
+              ...settings
+            });
+            break;
+            
+          default:
+            console.log(`[IPC] 使用通用压缩方法 (批量)`);
+            // 默认使用通用压缩方法
+            result = await compressImage(imagePath, outputPath, { ...settings });
+        }
+        
+        results.push(result);
+        
+        console.log(`[IPC] 批量处理文件完成 ${current}/${total}: ${imagePath}, 压缩率: ${result.compressionRate}`);
+        
+        // 发送进度更新
+        event.sender.send('compression-progress', {
+          current,
+          total,
+          result
+        });
+      }
+      
+      console.log(`[IPC] 批量压缩全部完成: ${results.length} 个文件`);
       
       return {
         success: true,
@@ -165,7 +238,7 @@ export function initCompressionHandlers() {
         outputDir
       };
     } catch (error) {
-      console.error('批量压缩图片失败:', error);
+      console.error('[IPC] 批量压缩图片失败:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : '未知错误'

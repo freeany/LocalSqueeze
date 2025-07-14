@@ -199,7 +199,7 @@ export default function ImageProcessPage() {
           // 根据文件数量决定使用单张处理还是批量处理
           if (validPaths.length === 1) {
             // 单张图片处理 - 直接保存到临时目录
-            const singleResult = await window.compression.compressImage(validPaths[0], compressionSettings);
+            const singleResult = await window.compression.compressImage(validPaths[0], { ...compressionSettings });
             // 将单个结果转换为与批量处理相同的格式
             result = {
               success: true,
@@ -207,7 +207,7 @@ export default function ImageProcessPage() {
             };
           } else {
             // 批量处理 - 保存到子文件夹
-            result = await window.compression.batchCompressImages(validPaths, compressionSettings);
+            result = await window.compression.batchCompressImages(validPaths, { ...compressionSettings });
           }
         } else {
           // 使用通用IPC调用
@@ -215,7 +215,7 @@ export default function ImageProcessPage() {
             // 单张图片处理
             const singleResult = await window.electron.ipcRenderer.invoke('compress-image', {
               imagePath: validPaths[0],
-              settings: compressionSettings
+              settings: { ...compressionSettings }
             });
             result = {
               success: true,
@@ -225,7 +225,7 @@ export default function ImageProcessPage() {
             // 批量处理
             result = await window.electron.ipcRenderer.invoke('batch-compress-images', {
               imagePaths: validPaths,
-              settings: compressionSettings
+              settings: { ...compressionSettings }
             });
           }
         }
