@@ -49,21 +49,21 @@ export function getFileExtension(fileName: string): string {
  * 根据命名模板生成输出文件名
  * @param originalPath 原始文件路径
  * @param fileNaming 文件命名模板
- * @param fileExtension 文件扩展名模板
  * @param outputFormat 输出格式
+ * @param keepFormat 是否保持原始格式
  * @returns 生成的文件名
  */
 export function generateOutputFileName(
   originalPath: string, 
-  fileNaming = '{filename}_compressed', 
-  fileExtension = '.{ext}',
-  outputFormat?: string
+  fileNaming = '{filename}_compressed',
+  outputFormat?: string,
+  keepFormat = true
 ): string {
   console.log('生成文件名，参数：', {
     originalPath,
     fileNaming,
-    fileExtension,
-    outputFormat
+    outputFormat,
+    keepFormat
   });
   
   const fileName = path.basename(originalPath);
@@ -81,11 +81,9 @@ export function generateOutputFileName(
   // 替换文件名模板中的变量
   const outputFileName = fileNaming.replace('{filename}', fileNameWithoutExt);
   
-  // 替换扩展名模板中的变量
-  let outputExtension = fileExtension.replace('{ext}', outputFormat || originalExt);
-  if (!outputExtension.startsWith('.')) {
-    outputExtension = '.' + outputExtension;
-  }
+  // 根据是否保持原始格式决定扩展名
+  const finalExt = keepFormat ? originalExt : (outputFormat || originalExt);
+  const outputExtension = '.' + finalExt.toLowerCase();
   
   const result = outputFileName + outputExtension;
   console.log('生成的文件名：', result);
@@ -159,8 +157,7 @@ export async function getCompressionSettings(): Promise<any> {
     progressive: false,
     keepFormat: true,
     outputFormat: 'PNG',
-    fileNaming: '{filename}_compressed',
-    fileExtension: '.{ext}'
+    fileNaming: '{filename}_compressed'
   };
   
   console.log('使用默认设置:', defaultSettings);
@@ -192,11 +189,13 @@ export function buildCompressionSettings(settings: any): CompressionSettings {
     // 确保输出格式是小写的
     (compressionSettings as any).outputFormat = settings.outputFormat ? settings.outputFormat.toLowerCase() : 'png';
     console.log(`构建压缩设置，输出格式: ${(compressionSettings as any).outputFormat}`);
+  } else {
+    // 即使保持原始格式，也需要添加outputFormat，以便在generateOutputFileName中使用
+    (compressionSettings as any).outputFormat = settings.outputFormat ? settings.outputFormat.toLowerCase() : 'png';
   }
   
   // 添加文件命名设置
   (compressionSettings as any).fileNaming = settings.fileNaming || '{filename}_compressed';
-  (compressionSettings as any).fileExtension = settings.fileExtension || '.{ext}';
   
   return compressionSettings;
 } 

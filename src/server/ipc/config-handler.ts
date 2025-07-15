@@ -63,8 +63,7 @@ export function initConfigHandlers() {
             progressive: false,
             keepFormat: true,
             outputFormat: 'PNG',
-            fileNaming: '{filename}_compressed',
-            fileExtension: '.{ext}'
+            fileNaming: '{filename}_compressed'
           }
         };
       }

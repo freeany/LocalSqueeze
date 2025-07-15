@@ -82,8 +82,8 @@ export function initCompressionHandlers() {
         const fileName = generateOutputFileName(
           imagePath,
           (settings as any).fileNaming,
-          (settings as any).fileExtension,
-          !settings.keepFormat && (settings as any).outputFormat ? (settings as any).outputFormat.toLowerCase() : undefined
+          (settings as any).outputFormat,
+          settings.keepFormat
         );
         
         outputPath = path.join(TEMP_DIR, fileName);
@@ -172,8 +172,8 @@ export function initCompressionHandlers() {
         const fileName = generateOutputFileName(
           imagePath,
           (settings as any).fileNaming,
-          (settings as any).fileExtension,
-          !settings.keepFormat && (settings as any).outputFormat ? (settings as any).outputFormat.toLowerCase() : undefined
+          (settings as any).outputFormat,
+          settings.keepFormat
         );
         
         const outputPath = path.join(outputDir, fileName);

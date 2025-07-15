@@ -36,7 +36,6 @@ export default function CompressionSettings() {
   const [outputFormat, setOutputFormat] = useState<string>('PNG');
   // 文件命名状态
   const [fileNaming, setFileNaming] = useState<string>('{filename}_compressed');
-  const [fileExtension, setFileExtension] = useState<string>('.{ext}');
   
   // 加载状态
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -71,10 +70,20 @@ export default function CompressionSettings() {
           optimizeColors: settings.optimizeColors !== undefined ? settings.optimizeColors : false,
           progressive: settings.progressive !== undefined ? settings.progressive : false
         });
-        setKeepFormat(settings.keepFormat !== undefined ? settings.keepFormat : true);
-        setOutputFormat(settings.outputFormat || 'PNG');
+        
+        // 确保keepFormat和outputFormat正确设置
+        const keepFormatValue = settings.keepFormat !== undefined ? settings.keepFormat : true;
+        setKeepFormat(keepFormatValue);
+        
+        // 确保输出格式正确设置，即使keepFormat为true
+        if (settings.outputFormat) {
+          setOutputFormat(settings.outputFormat.toUpperCase());
+          console.log(`加载设置，输出格式: ${settings.outputFormat.toUpperCase()}, 保持原始格式: ${keepFormatValue}`);
+        } else {
+          setOutputFormat('PNG');
+        }
+        
         setFileNaming(settings.fileNaming || '{filename}_compressed');
-        setFileExtension(settings.fileExtension || '.{ext}');
         
         // 生成预览结果
         setTimeout(() => generatePreview(), 100);
@@ -94,7 +103,6 @@ export default function CompressionSettings() {
         setKeepFormat(true);
         setOutputFormat('PNG');
         setFileNaming('{filename}_compressed');
-        setFileExtension('.{ext}');
       }
     };
     
@@ -106,11 +114,6 @@ export default function CompressionSettings() {
     setCompressionQuality(settings.quality);
     setKeepDimensions(settings.keepDimensions);
     setKeepFormat(settings.keepFormat);
-    setAdvancedOptions({
-      removeMetadata: settings.removeMetadata,
-      optimizeColors: settings.optimizeColors,
-      progressive: settings.progressive
-    });
     
     // 如果有尺寸设置
     if (!settings.keepDimensions && settings.width && settings.height) {
@@ -139,33 +142,26 @@ export default function CompressionSettings() {
       // 从后端获取预设设置
       if (window.compression) {
         const presetSettings = await window.compression.getCompressionPreset(preset);
+        // 修改预设设置，允许用户选择输出格式
+        presetSettings.keepFormat = false;
         applySettings(presetSettings as CompressionSettingsType);
       } else {
         // 如果后端API不可用，使用前端预设
         switch (preset) {
           case '低压缩':
             setCompressionQuality(80); // 对应压缩率20%
-            setAdvancedOptions({
-              removeMetadata: true,
-              optimizeColors: false,
-              progressive: false
-            });
+            // 设置为false，允许用户选择输出格式
+            setKeepFormat(false);
             break;
           case '中等压缩':
             setCompressionQuality(60); // 对应压缩率40%
-            setAdvancedOptions({
-              removeMetadata: true,
-              optimizeColors: true,
-              progressive: true
-            });
+            // 设置为false，允许用户选择输出格式
+            setKeepFormat(false);
             break;
           case '高压缩':
             setCompressionQuality(40); // 对应压缩率60%
-            setAdvancedOptions({
-              removeMetadata: true,
-              optimizeColors: true,
-              progressive: true
-            });
+            // 设置为false，允许用户选择输出格式
+            setKeepFormat(false);
             break;
           case '自定义':
             // 保持当前设置
@@ -194,12 +190,12 @@ export default function CompressionSettings() {
         height: dimensions.height,
         keepRatio,
         removeMetadata: advancedOptions.removeMetadata,
-        optimizeColors: preset === '中等压缩' || preset === '高压缩' ? true : advancedOptions.optimizeColors,
-        progressive: preset === '中等压缩' || preset === '高压缩' ? true : advancedOptions.progressive,
-        keepFormat,
+        optimizeColors: advancedOptions.optimizeColors,
+        progressive: advancedOptions.progressive,
+        // 设置为false，允许用户选择输出格式
+        keepFormat: false,
         outputFormat: outputFormat.toLowerCase(), // 确保保存小写的格式名称
-        fileNaming,
-        fileExtension
+        fileNaming
       };
       
       console.log('直接保存预设设置:', settings);
@@ -262,12 +258,26 @@ export default function CompressionSettings() {
   const handleQualityChange = (value: number) => {
     setCompressionQuality(value);
     
-    // 更新预览
-    generatePreview();
+    // 直接构建设置对象并保存，避免使用状态中可能未更新的值
+    const settings = {
+      preset: activePreset,
+      quality: value, // 使用传入的新值
+      keepDimensions,
+      width: dimensions.width,
+      height: dimensions.height,
+      keepRatio,
+      removeMetadata: advancedOptions.removeMetadata,
+      optimizeColors: advancedOptions.optimizeColors,
+      progressive: advancedOptions.progressive,
+      keepFormat,
+      outputFormat: outputFormat.toLowerCase(),
+      fileNaming
+    };
     
-    // 不再自动切换到自定义预设
-    // 仅保存设置
-    saveCurrentSettings();
+    // 立即保存设置，然后更新预览
+    saveCompressionSettings(settings).then(() => {
+      generatePreview();
+    });
   };
   
   // 处理保持尺寸变化
@@ -293,14 +303,29 @@ export default function CompressionSettings() {
   
   // 处理保持格式变化
   const handleKeepFormatChange = () => {
-    setKeepFormat(!keepFormat);
+    const newKeepFormat = !keepFormat;
+    setKeepFormat(newKeepFormat);
     
-    // 更新预览
-    generatePreview();
+    // 直接构建设置对象并保存，避免使用状态中可能未更新的值
+    const settings = {
+      preset: activePreset,
+      quality: compressionQuality,
+      keepDimensions,
+      width: dimensions.width,
+      height: dimensions.height,
+      keepRatio,
+      removeMetadata: advancedOptions.removeMetadata,
+      optimizeColors: advancedOptions.optimizeColors,
+      progressive: advancedOptions.progressive,
+      keepFormat: newKeepFormat, // 使用新的值
+      outputFormat: outputFormat.toLowerCase(),
+      fileNaming
+    };
     
-    // 不再自动切换到自定义预设
-    // 仅保存设置
-    saveCurrentSettings();
+    // 立即保存设置，然后更新预览
+    saveCompressionSettings(settings).then(() => {
+      generatePreview();
+    });
   };
   
   // 处理输出格式变化
@@ -309,12 +334,33 @@ export default function CompressionSettings() {
     setOutputFormat(format.toUpperCase());
     console.log(`输出格式变更为: ${format.toUpperCase()} (保存为小写)`);
     
-    // 更新预览
-    generatePreview();
+    // 确保设置keepFormat为false，允许选择输出格式
+    setKeepFormat(false);
     
-    // 不再自动切换到自定义预设
-    // 仅保存设置
-    saveCurrentSettings();
+    // 切换到自定义预设，确保设置能被保存
+    setActivePreset('自定义');
+    
+    // 直接构建设置对象并保存，避免使用状态中可能未更新的值
+    const settings = {
+      preset: '自定义', // 强制设为自定义预设
+      quality: compressionQuality,
+      keepDimensions,
+      width: dimensions.width,
+      height: dimensions.height,
+      keepRatio,
+      removeMetadata: advancedOptions.removeMetadata,
+      optimizeColors: advancedOptions.optimizeColors,
+      progressive: advancedOptions.progressive,
+      keepFormat: false, // 强制设为false，允许选择输出格式
+      outputFormat: format.toLowerCase(), // 使用传入的format参数，确保正确保存
+      fileNaming
+    };
+    
+    console.log('保存输出格式设置:', settings);
+    saveCompressionSettings(settings).then(() => {
+      // 保存成功后更新预览
+      generatePreview();
+    });
   };
   
   // 处理文件命名变化
@@ -324,20 +370,25 @@ export default function CompressionSettings() {
     console.log('文件命名变更后:', value);
     
     // 文件命名不应该影响预设类型，所以不再切换到自定义预设
-    // 仅保存设置
-    setTimeout(() => {
-      console.log('保存文件命名设置:', value);
-      saveCurrentSettings();
-    }, 0);
-  };
-  
-  // 处理文件扩展名变化
-  const handleFileExtensionChange = (value: string) => {
-    setFileExtension(value);
+    // 直接保存设置，不使用setTimeout延迟
+    // 使用传入的value值而不是状态中的fileNaming，因为状态更新是异步的
+    const settings = {
+      preset: activePreset,
+      quality: compressionQuality,
+      keepDimensions,
+      width: dimensions.width,
+      height: dimensions.height,
+      keepRatio,
+      removeMetadata: advancedOptions.removeMetadata,
+      optimizeColors: advancedOptions.optimizeColors,
+      progressive: advancedOptions.progressive,
+      keepFormat,
+      outputFormat: outputFormat.toLowerCase(),
+      fileNaming: value // 使用传入的新值
+    };
     
-    // 文件扩展名不应该影响预设类型，所以不再切换到自定义预设
-    // 仅保存设置
-    setTimeout(() => saveCurrentSettings(), 0);
+    console.log('保存文件命名设置:', value);
+    saveCompressionSettings(settings);
   };
   
   // 生成预览结果
@@ -360,8 +411,7 @@ export default function CompressionSettings() {
         }
       });
       
-      // 保存当前设置
-      saveCurrentSettings();
+      // 不再自动保存设置，避免覆盖已保存的格式选择
     } catch (error) {
       console.error('生成预览失败:', error);
     }
@@ -372,7 +422,9 @@ export default function CompressionSettings() {
     try {
       // 获取当前最新状态
       console.log('当前预设:', activePreset);
-      console.log('当前文件命名设置:', fileNaming, fileExtension);
+      console.log('当前输出格式:', outputFormat);
+      console.log('当前保持原始格式:', keepFormat);
+      console.log('当前文件命名设置:', fileNaming);
       
       // 构建设置对象
       const settings = {
@@ -387,37 +439,13 @@ export default function CompressionSettings() {
         progressive: advancedOptions.progressive,
         keepFormat,
         outputFormat: outputFormat.toLowerCase(), // 确保保存小写的格式名称
-        fileNaming,
-        fileExtension
+        fileNaming
       };
       
       console.log('保存设置到配置文件，输出格式:', settings.outputFormat);
       
-      // 检查是否只有文件命名或扩展名变更
-      const savedSettingsData = await getCompressionSettings();
-      const savedSettings = savedSettingsData;
-      const isOnlyFileSettingsChanged = 
-        savedSettings && 
-        savedSettings.preset !== '自定义' &&
-        savedSettings.quality === settings.quality &&
-        savedSettings.keepDimensions === settings.keepDimensions &&
-        savedSettings.width === settings.width &&
-        savedSettings.height === settings.height &&
-        savedSettings.keepFormat === settings.keepFormat &&
-        savedSettings.outputFormat === settings.outputFormat &&
-        savedSettings.removeMetadata === settings.removeMetadata &&
-        savedSettings.optimizeColors === settings.optimizeColors &&
-        savedSettings.progressive === settings.progressive &&
-        (savedSettings.fileNaming !== settings.fileNaming || 
-         savedSettings.fileExtension !== settings.fileExtension);
-      
-      // 如果只是文件命名或扩展名变更，保持原预设
-      if (isOnlyFileSettingsChanged && activePreset === '自定义') {
-        settings.preset = savedSettings.preset;
-        console.log('保持原预设:', settings.preset);
-      }
-      
-      console.log('保存设置:', settings);
+      // 直接保存设置，不再进行额外检查
+      console.log('最终保存的设置:', settings);
       await saveCompressionSettings(settings);
     } catch (error) {
       console.error('保存设置失败:', error);
@@ -437,7 +465,6 @@ export default function CompressionSettings() {
       optimizeColors: advancedOptions.optimizeColors,
       progressive: advancedOptions.progressive,
       fileNaming,
-      fileExtension
     }) as CompressionSettingsType;
   };
 
@@ -460,17 +487,11 @@ export default function CompressionSettings() {
       
       switch (activePreset) {
         case '低压缩':
-          return currentCompressionRate !== 20 || 
-                 advancedOptions.optimizeColors !== false || 
-                 advancedOptions.progressive !== false;
+          return currentCompressionRate !== 20;
         case '中等压缩':
-          return currentCompressionRate !== 40 || 
-                 advancedOptions.optimizeColors !== true || 
-                 advancedOptions.progressive !== true;
+          return currentCompressionRate !== 40;
         case '高压缩':
-          return currentCompressionRate !== 60 || 
-                 advancedOptions.optimizeColors !== true || 
-                 advancedOptions.progressive !== true;
+          return currentCompressionRate !== 60;
         default:
           return false;
       }
@@ -629,6 +650,7 @@ export default function CompressionSettings() {
               {/* 高级选项 */}
               <div>
                 <label className="block font-medium mb-1">高级选项</label>
+                <p className="text-sm text-muted-foreground mb-2">这些功能暂时不开放</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   <div className="flex items-center gap-2">
                     <input
@@ -637,8 +659,9 @@ export default function CompressionSettings() {
                       checked={advancedOptions.removeMetadata}
                       onChange={() => handleAdvancedOptionChange('removeMetadata')}
                       className="rounded border-border"
+                      disabled
                     />
-                    <label htmlFor="remove-metadata">移除元数据</label>
+                    <label htmlFor="remove-metadata" className="opacity-50">移除元数据</label>
                   </div>
                   <div className="flex items-center gap-2">
                     <input
@@ -647,8 +670,9 @@ export default function CompressionSettings() {
                       checked={advancedOptions.optimizeColors}
                       onChange={() => handleAdvancedOptionChange('optimizeColors')}
                       className="rounded border-border"
+                      disabled
                     />
-                    <label htmlFor="optimize-colors">优化颜色</label>
+                    <label htmlFor="optimize-colors" className="opacity-50">优化颜色</label>
                   </div>
                   <div className="flex items-center gap-2">
                     <input
@@ -657,8 +681,9 @@ export default function CompressionSettings() {
                       checked={advancedOptions.progressive}
                       onChange={() => handleAdvancedOptionChange('progressive')}
                       className="rounded border-border"
+                      disabled
                     />
-                    <label htmlFor="progressive">渐进式加载</label>
+                    <label htmlFor="progressive" className="opacity-50">渐进式加载</label>
                   </div>
                 </div>
               </div>
@@ -687,7 +712,7 @@ export default function CompressionSettings() {
                     <button
                       key={format}
                       className={`px-4 py-2 rounded-md border transition-colors ${
-                        outputFormat === format && !keepFormat
+                        outputFormat.toUpperCase() === format.toUpperCase() && !keepFormat
                           ? 'bg-primary/10 border-primary text-primary' 
                           : 'bg-muted border-border hover:bg-muted/80'
                       } ${keepFormat ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
@@ -697,6 +722,33 @@ export default function CompressionSettings() {
                       {format}
                     </button>
                   ))}
+                </div>
+                
+                {/* 格式说明 */}
+                <div className="mt-4 text-sm text-muted-foreground">
+                  <p className="mb-1 font-medium">格式简介：</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="p-2 bg-muted/30 rounded-md">
+                      <p className="font-medium">JPEG</p>
+                      <p>照片最佳选择，高压缩率，不支持透明</p>
+                    </div>
+                    <div className="p-2 bg-muted/30 rounded-md">
+                      <p className="font-medium">PNG</p>
+                      <p>无损压缩，支持透明，适合图标和截图</p>
+                    </div>
+                    <div className="p-2 bg-muted/30 rounded-md">
+                      <p className="font-medium">WebP</p>
+                      <p>更小的文件体积，同时支持透明和高压缩</p>
+                    </div>
+                    <div className="p-2 bg-muted/30 rounded-md">
+                      <p className="font-medium">GIF</p>
+                      <p>支持动画，256色限制，简单图像适用</p>
+                    </div>
+                  </div>
+                  
+                  <p className="mt-2 italic">
+                    <span className="font-medium">提示：</span> 选择合适的格式可以获得最佳压缩效果
+                  </p>
                 </div>
               </div>
               
@@ -711,16 +763,6 @@ export default function CompressionSettings() {
                     onChange={(e) => handleFileNamingChange(e.target.value)}
                     className="flex-1 min-w-[200px] px-3 py-2 rounded-md border border-border bg-background"
                   />
-                  <select
-                    value={fileExtension}
-                    onChange={(e) => handleFileExtensionChange(e.target.value)}
-                    className="px-3 py-2 rounded-md border border-border bg-background"
-                  >
-                    <option value=".{ext}">.{'{ext}'}</option>
-                    <option value=".jpg">.jpg</option>
-                    <option value=".png">.png</option>
-                    <option value=".webp">.webp</option>
-                  </select>
                 </div>
               </div>
             </div>
@@ -729,4 +771,4 @@ export default function CompressionSettings() {
       )}
     </div>
   );
-} 
+}

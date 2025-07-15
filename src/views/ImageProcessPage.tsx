@@ -43,22 +43,26 @@ export default function ImageProcessPage() {
   
   // 加载保存的压缩设置
   useEffect(() => {
-    try {
-      // 从本地存储获取保存的设置
-      const savedSettings = getCompressionSettings();
-      console.log('ImageProcessPage组件加载设置:', savedSettings);
-      console.log('文件命名设置:', savedSettings.fileNaming, savedSettings.fileExtension);
-      
-      // 构建压缩设置对象
-      const settings = buildCompressionSettings(savedSettings);
-      console.log('构建的压缩设置对象:', settings);
-      console.log('构建后的文件命名设置:', (settings as any).fileNaming, (settings as any).fileExtension);
-      
-      // 更新压缩设置状态
-      setCompressionSettings(settings);
-    } catch (error) {
-      console.error('加载压缩设置失败:', error);
+    async function loadSettings() {
+      try {
+        // 从本地存储获取保存的设置
+        const savedSettings = await getCompressionSettings();
+        console.log('ImageProcessPage组件加载设置:', savedSettings);
+        console.log('文件命名设置:', savedSettings.fileNaming, savedSettings.fileExtension);
+        
+        // 构建压缩设置对象
+        const settings = buildCompressionSettings(savedSettings);
+        console.log('构建的压缩设置对象:', settings);
+        console.log('构建后的文件命名设置:', (settings as any).fileNaming, (settings as any).fileExtension);
+        
+        // 更新压缩设置状态
+        setCompressionSettings(settings);
+      } catch (error) {
+        console.error('加载压缩设置失败:', error);
+      }
     }
+    
+    loadSettings();
   }, []);
   
   // 监听压缩进度更新
@@ -149,7 +153,7 @@ export default function ImageProcessPage() {
     
     try {
       // 获取最新的压缩设置
-      const savedSettings = getCompressionSettings();
+      const savedSettings = await getCompressionSettings();
       console.log('处理图片时获取的设置:', savedSettings);
       console.log('文件命名设置:', savedSettings.fileNaming, savedSettings.fileExtension);
       
