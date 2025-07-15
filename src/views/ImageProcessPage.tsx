@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Upload, Download, Eye } from 'lucide-react';
 import { formatFileSize, calculateCompressionRate, getCompressionSettings, buildCompressionSettings } from '../lib/utils';
 // eslint-disable-next-line import/no-unresolved
@@ -10,6 +11,7 @@ function getBasename(filepath: string): string {
 }
 
 export default function ImageProcessPage() {
+  const navigate = useNavigate();
   const [files, setFiles] = useState<File[]>([]);
   const [processedFiles, setProcessedFiles] = useState<any[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -365,6 +367,9 @@ export default function ImageProcessPage() {
       } else {
         throw new Error(`处理失败: ${result?.error || '未知错误'}`);
       }
+      
+      // 将压缩结果保存到会话存储，以便在对比页面使用
+      sessionStorage.setItem('compressionResults', JSON.stringify(result.results));
     } catch (error) {
       console.error('处理图片时出错:', error);
       alert(`处理图片时出错: ${error instanceof Error ? error.message : '未知错误'}\n请查看控制台获取详细信息`);

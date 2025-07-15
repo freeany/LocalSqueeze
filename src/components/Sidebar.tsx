@@ -13,12 +13,11 @@ import { useState } from 'react';
 
 const menuItems = [
   { name: '首页', icon: <Home className="h-5 w-5" />, path: '/' },
-  { name: '图片处理', icon: <Upload className="h-5 w-5" />, path: '/upload' },
-  { name: '压缩设置', icon: <Sliders className="h-5 w-5" />, path: '/settings/compression' },
+  { name: '图片处理', icon: <Upload className="h-5 w-5" />, path: '/process' },
+  { name: '压缩设置', icon: <Sliders className="h-5 w-5" />, path: '/settings' },
   { name: '效果对比', icon: <Images className="h-5 w-5" />, path: '/comparison' },
   { name: '批量处理', icon: <Package className="h-5 w-5" />, path: '/batch' },
   { name: '导出管理', icon: <Download className="h-5 w-5" />, path: '/export' },
-  { name: '设置', icon: <Settings className="h-5 w-5" />, path: '/settings' },
   { name: '帮助', icon: <HelpCircle className="h-5 w-5" />, path: '/help' },
 ];
 
