@@ -33,3 +33,5 @@ release
 /release
 /docs
 /prototype
+
+.env

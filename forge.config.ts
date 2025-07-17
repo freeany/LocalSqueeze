@@ -14,7 +14,32 @@ const config: ForgeConfig = {
     }
   },
   rebuildConfig: {},
-  makers: [new MakerSquirrel({}), new MakerZIP({}, ['darwin']), new MakerRpm({}), new MakerDeb({})],
+  makers: [
+    new MakerSquirrel({
+      name: "LocalSqueeze",
+      description: "图片压缩工具",
+      setupIcon: './src/assets/icons/win/icon.ico',
+      setupExe: 'LocalSqueeze-Setup.exe',
+      noMsi: false
+    }), 
+    new MakerZIP({}, ['darwin']), 
+    new MakerRpm({}), 
+    new MakerDeb({})
+  ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'freeany',
+          name: 'LocalSqueeze'
+        },
+        prerelease: false,
+        draft: false,
+        authToken: process.env.GITHUB_TOKEN
+      }
+    }
+  ],
   plugins: [
     new VitePlugin({
       // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.

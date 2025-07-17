@@ -1,8 +1,8 @@
 {
-  "name": "imgs-compress",
-  "productName": "imgs-compress",
+  "name": "@freeany/local-squeeze",
+  "productName": "LocalSqueeze",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "本地图片压缩工具",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
@@ -17,6 +17,13 @@
     "email": "lhr_freeany@163.com"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/freeany/LocalSqueeze.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "devDependencies": {
     "@electron-forge/cli": "^7.8.1",
     "@electron-forge/maker-deb": "^7.8.1",
@@ -26,6 +33,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
     "@electron-forge/plugin-fuses": "^7.8.1",
     "@electron-forge/plugin-vite": "^7.8.1",
+    "@electron-forge/publisher-github": "^7.8.1",
     "@electron/fuses": "^1.8.0",
     "@tailwindcss/postcss": "^4.1.11",
     "@timfish/forge-externals-plugin": "^0.2.1",
@@ -37,6 +45,7 @@
     "@typescript-eslint/parser": "^5.62.0",
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.21",
+    "cross-env": "^7.0.3",
     "electron": "37.2.1",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
