@@ -18,7 +18,6 @@ const ExportPage: React.FC = () => {
   });
   const [exportSettings, setExportSettings] = useState({
     outputDirectory: '',
-    createSubfolder: false,
     fileNaming: '{filename}',
     exportFormat: 'original',
     overwriteExisting: false,
@@ -192,30 +191,18 @@ const ExportPage: React.FC = () => {
           </div>
         </div>
         
-        {/* 创建子文件夹 */}
-        <div className="mb-4">
-          <Checkbox 
-            id="createSubfolder"
-            checked={exportSettings.createSubfolder}
-            onCheckedChange={(checked) => 
-              setExportSettings(prev => ({ ...prev, createSubfolder: !!checked }))
-            }
-          />
-          <label htmlFor="createSubfolder" className="ml-2 text-sm text-gray-700">
-            创建子文件夹
-          </label>
-        </div>
+
         
-        {/* 文件命名 */}
+        {/* 文件命名（已禁用） */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">文件命名</label>
+          <label className="block text-sm font-medium text-gray-500 mb-1">文件命名（暂不可用）</label>
           <Input 
             value={exportSettings.fileNaming}
-            onChange={(e) => setExportSettings(prev => ({ ...prev, fileNaming: e.target.value }))}
+            disabled={true}
             placeholder="例如: {filename}_exported"
-            className="w-full mb-1"
+            className="w-full mb-1 opacity-70 cursor-not-allowed"
           />
-          <p className="text-xs text-gray-500">可用变量: {'{filename}'} - 原始文件名, {'{date}'} - 当前日期, {'{time}'} - 当前时间</p>
+          <p className="text-xs text-gray-400">可用变量: {'{filename}'} - 原始文件名, {'{date}'} - 当前日期, {'{time}'} - 当前时间</p>
         </div>
         
         {/* 导出格式 */}
