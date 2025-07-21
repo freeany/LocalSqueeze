@@ -20,7 +20,9 @@ const config: ForgeConfig = {
       description: "图片压缩工具",
       setupIcon: './src/assets/icons/win/icon.ico',
       setupExe: 'LocalSqueeze-Setup.exe',
-      noMsi: false
+      noMsi: false,
+      // 设置为Windows GUI应用程序（无控制台）
+      loadingGif: './src/assets/icons/win/installer.svg'
     }), 
     new MakerZIP({}, ['darwin']), 
     new MakerRpm({}), 

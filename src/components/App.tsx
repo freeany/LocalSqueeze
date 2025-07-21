@@ -4,6 +4,7 @@ import HomePage from '../views/HomePage';
 import ImageProcessPage from '../views/ImageProcessPage';
 import CompressionSettings from '../views/CompressionSettings';
 import ComparisonPage from '../views/ComparisonPage';
+import ExportPage from '../views/ExportPage';
 
 export default function App() {
   // 判断是否为生产环境
@@ -21,7 +22,7 @@ export default function App() {
           <Route path="settings" element={<CompressionSettings />} />
           <Route path="comparison" element={<ComparisonPage />} />
           <Route path="batch" element={<div>批量处理页面</div>} />
-          <Route path="export" element={<div>导出管理页面</div>} />
+          <Route path="export" element={<ExportPage />} />
           <Route path="help" element={<div>帮助页面</div>} />
         </Route>
       </Routes>

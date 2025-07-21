@@ -35,11 +35,20 @@ const imagePathCache = new Map<string, string>();
 let mainWindow: BrowserWindow | null = null;
 
 const createWindow = () => {
+  // 判断是否为生产环境
+  const isProduction = process.env.NODE_ENV === 'production' || !MAIN_WINDOW_VITE_DEV_SERVER_URL;
+  
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     icon: path.join(__dirname, '../assets/icons/icon.png'),
+    // 在生产环境下最大化窗口
+    show: false, // 先隐藏窗口，等准备好后再显示，避免闪烁
+    // 在生产环境下禁用菜单栏
+    autoHideMenuBar: isProduction,
+    // 在生产环境下禁用窗口的最小化、最大化、关闭按钮的默认行为
+    frame: true,
     webPreferences: {
       preload:  path.join(__dirname, 'preload.js'),
       // 添加以下配置以禁用自动填充功能
@@ -48,8 +57,8 @@ const createWindow = () => {
       contextIsolation: true,
       // 允许加载本地资源
       webSecurity: false, // 注意：这会降低安全性，但在本地应用中可以接受
-      // 启用开发者工具
-      devTools: true,
+      // 启用开发者工具，在生产环境下禁用
+      devTools: !isProduction,
       // 允许远程模块
       nodeIntegration: false,
       // 启用沙箱
@@ -57,8 +66,10 @@ const createWindow = () => {
     },
   });
 
-  // 打开开发者工具
-  mainWindow.webContents.openDevTools();
+  // 只在开发环境下打开开发者工具
+  if (!isProduction) {
+    mainWindow.webContents.openDevTools();
+  }
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -70,6 +81,12 @@ const createWindow = () => {
   // 监听页面加载完成事件
   mainWindow.webContents.on('did-finish-load', () => {
     // 已删除日志
+    
+    // 显示窗口并在生产环境下最大化
+    if (isProduction) {
+      mainWindow.maximize();
+    }
+    mainWindow.show();
   });
 
   // 监听渲染进程错误
@@ -88,6 +105,48 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
+  // 判断是否为生产环境
+  const isProduction = process.env.NODE_ENV === 'production' || !MAIN_WINDOW_VITE_DEV_SERVER_URL;
+  
+  // 在生产环境下禁用开发者工具
+  if (isProduction) {
+    // 设置默认窗口选项，禁用开发者工具
+    app.on('browser-window-created', (_, window) => {
+      // 强制关闭开发者工具
+      window.webContents.on('devtools-opened', () => {
+        window.webContents.closeDevTools();
+      });
+      
+      // 禁用右键菜单中的检查元素选项
+      window.webContents.on('context-menu', (e, params) => {
+        e.preventDefault();
+      });
+      
+      // 禁用所有可能打开开发者工具的快捷键
+      window.webContents.on('before-input-event', (e, input) => {
+        // 禁用F12、Ctrl+Shift+I、Ctrl+Shift+J、Ctrl+Shift+C等快捷键
+        if (
+          input.key === 'F12' || 
+          (input.control && input.shift && (input.key === 'I' || input.key === 'J' || input.key === 'C')) ||
+          (input.control && input.alt && input.key === 'I')
+        ) {
+          e.preventDefault();
+        }
+      });
+    });
+    
+    // 禁用应用程序菜单，防止通过菜单打开开发者工具
+    app.on('browser-window-focus', () => {
+      if (process.platform !== 'darwin') {
+        // 在非macOS平台上禁用菜单
+        BrowserWindow.getFocusedWindow()?.setMenuBarVisibility(false);
+      }
+    });
+    
+    // 完全禁用开发者工具
+    app.commandLine.appendSwitch('disable-devtools');
+  }
+  
   await ensureTempDir();
   initAllHandlers(); // 初始化所有IPC处理程序
 

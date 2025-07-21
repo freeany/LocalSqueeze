@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <style>
+    .spinner {
+      animation: rotate 2s linear infinite;
+      transform-origin: center;
+    }
+    
+    .path {
+      stroke: #4299e1;
+      stroke-linecap: round;
+      animation: dash 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes rotate {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    
+    @keyframes dash {
+      0% {
+        stroke-dasharray: 1, 150;
+        stroke-dashoffset: 0;
+      }
+      50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -35;
+      }
+      100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -124;
+      }
+    }
+  </style>
+  
+  <rect width="256" height="256" fill="#f7fafc" rx="12" ry="12"/>
+  
+  <g class="spinner" transform="translate(128, 128)">
+    <circle class="path" cx="0" cy="0" r="70" fill="none" stroke-width="12"></circle>
+  </g>
+  
+  <text x="128" y="180" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#2d3748">LocalSqueeze</text>
+  <text x="128" y="200" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#718096">图片压缩工具</text>
+</svg>
