@@ -5,7 +5,7 @@ import { Radio } from '../components/ui/radio';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/ui/select';
 import { cn } from '../lib/utils';
 // eslint-disable-next-line import/no-unresolved
-import { ProcessedImage } from './types/global'
+import { ProcessedImage } from '../types/global'
 
 const ExportPage: React.FC = () => {
   // 状态管理
