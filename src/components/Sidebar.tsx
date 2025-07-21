@@ -16,7 +16,7 @@ const menuItems = [
   { name: '图片处理', icon: <Upload className="h-5 w-5" />, path: '/process' },
   { name: '压缩设置', icon: <Sliders className="h-5 w-5" />, path: '/settings' },
   { name: '效果对比', icon: <Images className="h-5 w-5" />, path: '/comparison' },
-  { name: '批量处理', icon: <Package className="h-5 w-5" />, path: '/batch' },
+  // { name: '批量处理', icon: <Package className="h-5 w-5" />, path: '/batch' },
   { name: '导出管理', icon: <Download className="h-5 w-5" />, path: '/export' },
   { name: '帮助', icon: <HelpCircle className="h-5 w-5" />, path: '/help' },
 ];

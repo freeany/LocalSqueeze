@@ -1,17 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Upload, Sliders, Images, Package, Search, Repeat, Smartphone, Lock, FileImage } from 'lucide-react';
+import { Images, Package, Search, Repeat, Smartphone, Lock, FileImage } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatFileSize } from '../lib/utils';
-
-// 记录日志函数
-const logInfo = (message: string, ...args: any[]) => {
-  console.log(`[HomePage] ${message}`, ...args);
-};
-
-// 记录错误函数
-const logError = (message: string, error: any) => {
-  console.error(`[HomePage Error] ${message}`, error);
-};
 
 // 定义图片类型接口
 interface ImageItem {
@@ -26,7 +16,7 @@ interface ImageItem {
 }
 
 export default function HomePage() {
-  logInfo('HomePage组件渲染');
+  // 已删除日志
   
   // 统计数据状态
   const [stats, setStats] = useState({
@@ -50,17 +40,12 @@ export default function HomePage() {
     let isMounted = true;
     
     const loadStats = async () => {
-      logInfo('开始加载统计数据');
+      // 已删除日志
       try {
         setLoading(true);
         setError(null);
         
-        // 调试：检查window对象上的API
-        logInfo('检查window对象上的API', {
-          hasElectron: !!window.electron,
-          hasStats: !!window.stats,
-          hasCompression: !!window.compression
-        });
+        // 已删除日志
         
         // 检查window.stats是否存在
         if (!window.stats) {
@@ -77,7 +62,7 @@ export default function HomePage() {
           return;
         }
         
-        logInfo('调用window.stats.getStats()');
+        // 已删除日志
         // 同时请求统计数据和最近图片
         const [statsResponse, recentResponse] = await Promise.all([
           window.stats.getStats(),
@@ -86,11 +71,11 @@ export default function HomePage() {
         
         // 确保组件仍然挂载
         if (!isMounted) {
-          logInfo('组件已卸载，取消后续操作');
+          // 已删除日志
           return;
         }
         
-        logInfo('获取到统计数据', statsResponse);
+        // 已删除日志
         // 处理统计数据
         if (statsResponse && statsResponse.success && statsResponse.stats) {
           setStats({
@@ -99,11 +84,9 @@ export default function HomePage() {
             compressionRate: statsResponse.stats.averageCompressionRate || '0%',
             todayProcessed: statsResponse.todayStats?.processedImages || 0
           });
-        } else {
-          logError('统计数据响应格式不正确', statsResponse);
         }
         
-        logInfo('获取到最近图片数据', { count: recentResponse?.images?.length || 0 });
+        // 已删除日志
         // 处理最近图片数据
         if (recentResponse && recentResponse.success && Array.isArray(recentResponse.images)) {
           const formattedImages: ImageItem[] = [];
@@ -111,12 +94,12 @@ export default function HomePage() {
           // 处理每张图片
           for (const img of recentResponse.images) {
             try {
-              logInfo('获取图片缩略图', { id: img.id, path: img.outputPath });
+              // 已删除日志
               // 获取缩略图
               const thumbnail = await window.electron.ipcRenderer.invoke('get-image-data-url', img.outputPath);
               
               if (!isMounted) {
-                logInfo('组件已卸载，取消后续操作');
+                // 已删除日志
                 return;
               }
               
@@ -131,19 +114,19 @@ export default function HomePage() {
                 outputPath: img.outputPath
               });
             } catch (error) {
-              logError('获取缩略图失败', error);
+              // 已删除日志
             }
           }
           
           if (isMounted) {
-            logInfo('设置最近图片数据', { count: formattedImages.length });
+            // 已删除日志
             setRecentImages(formattedImages);
           }
         } else {
-          logError('最近图片数据响应格式不正确', recentResponse);
+          // 已删除日志
         }
       } catch (error) {
-        logError('加载统计数据失败', error);
+        // 已删除日志
         // 错误时使用默认值
         if (isMounted) {
           setStats({
@@ -156,7 +139,7 @@ export default function HomePage() {
         }
       } finally {
         if (isMounted) {
-          logInfo('完成数据加载');
+          // 已删除日志
           setLoading(false);
         }
       }
@@ -167,7 +150,7 @@ export default function HomePage() {
     
     // 清理函数
     return () => {
-      logInfo('HomePage组件卸载');
+      // 已删除日志
       isMounted = false;
     };
   }, []); // 空依赖数组，只在组件挂载时执行一次
@@ -175,11 +158,11 @@ export default function HomePage() {
   // 打开文件位置
   const openFileLocation = async (filePath: string) => {
     try {
-      logInfo('打开文件位置', { filePath });
+      // 已删除日志
       // 使用electron的shell.showItemInFolder方法打开文件所在位置
       await window.electron.ipcRenderer.invoke('show-item-in-folder', filePath);
     } catch (error) {
-      logError('打开文件位置失败', error);
+      // 已删除日志
       alert('打开文件位置失败');
     }
   };
@@ -188,12 +171,12 @@ export default function HomePage() {
   const reprocessImage = (image: ImageItem) => {
     // 导航到处理页面并传递图片信息
     // 这里可以根据实际需求实现
-    logInfo('重新处理图片', image);
+    // 已删除日志
   };
 
   // 手动刷新数据
   const refreshData = () => {
-    logInfo('手动刷新数据');
+    // 已删除日志
     setLoading(true);
     setError(null);
     
@@ -210,7 +193,7 @@ export default function HomePage() {
       window.stats.getRecentImages(4)
     ])
     .then(([statsResponse, recentResponse]) => {
-      logInfo('手动刷新数据成功');
+      // 已删除日志
       
       // 处理统计数据
       if (statsResponse && statsResponse.success && statsResponse.stats) {
@@ -238,7 +221,7 @@ export default function HomePage() {
               outputPath: img.outputPath
             };
           } catch (error) {
-            logError('获取缩略图失败', error);
+            // 已删除日志
             return null;
           }
         }))
@@ -251,7 +234,7 @@ export default function HomePage() {
       }
     })
     .catch(err => {
-      logError('手动刷新数据失败', err);
+      // 已删除日志
       setError(err instanceof Error ? err.message : '刷新数据失败');
       setLoading(false);
     });
@@ -427,7 +410,7 @@ export default function HomePage() {
                   alt={image.name} 
                   className="w-12 h-12 object-cover rounded-md mr-4" 
                   onError={(e) => {
-                    logError('图片加载失败', { src: image.thumbnail });
+                    // 已删除日志
                     (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'%3E%3C/circle%3E%3Cpolyline points='21 15 16 10 5 21'%3E%3C/polyline%3E%3C/svg%3E`;
                   }}
                 />
@@ -477,4 +460,4 @@ export default function HomePage() {
       </div>
     </div>
   );
-} 
+}

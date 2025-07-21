@@ -19,7 +19,7 @@ async function ensureTempDir() {
   try {
     await fs.mkdir(TEMP_DIR, { recursive: true });
   } catch (error) {
-    console.error('创建临时目录失败:', error);
+    // 已删除日志
   }
 }
 
@@ -69,17 +69,17 @@ const createWindow = () => {
 
   // 监听页面加载完成事件
   mainWindow.webContents.on('did-finish-load', () => {
-    console.log('页面加载完成');
+    // 已删除日志
   });
 
   // 监听渲染进程错误
   mainWindow.webContents.on('render-process-gone', (event, details) => {
-    console.error('渲染进程崩溃:', details.reason);
+    // 已删除日志
   });
 
   // 监听页面崩溃
   mainWindow.webContents.on('crashed' as any, () => {
-    console.error('页面崩溃');
+    // 已删除日志
   });
 }
 
@@ -98,19 +98,19 @@ app.on('ready', async () => {
       const fileId = request.url.substring('app-image://'.length);
       // 解码文件ID
       const decodedId = decodeURIComponent(fileId);
-      console.log(`请求图片ID: ${decodedId}`);
+      // 已删除日志
 
       // 从缓存中获取实际文件路径
       const filePath = imagePathCache.get(decodedId);
       if (!filePath) {
-        console.error(`未找到图片路径: ${decodedId}`);
+        // 已删除日志
         return callback({ error: -2 });
       }
 
-      console.log(`加载图片: ${filePath}`);
+      // 已删除日志
       callback({ path: filePath });
     } catch (error) {
-      console.error('加载图片失败:', error);
+      // 已删除日志
       callback({ error: -2 });
     }
   });
@@ -132,14 +132,14 @@ app.on('ready', async () => {
       // 将Buffer写入文件
       await fs.writeFile(tempFilePath, Buffer.from(data));
 
-      console.log(`文件已保存到: ${tempFilePath}`);
+      // 已删除日志
       // 返回临时文件路径和原始文件名
       return {
         path: tempFilePath,
         originalFilename: filename
       };
     } catch (error) {
-      console.error('保存临时文件失败:', error);
+      // 已删除日志
       // 返回详细的错误信息
       throw new Error(`保存临时文件失败: ${error.message || '未知错误'}`);
     }
@@ -150,7 +150,7 @@ app.on('ready', async () => {
     try {
       // 检查文件是否存在
       if (!existsSync(filePath)) {
-        console.error(`文件不存在: ${filePath}`);
+        // 已删除日志
         return '';
       }
 
@@ -162,10 +162,10 @@ app.on('ready', async () => {
 
       // 返回自定义协议URL
       const url = `app-image://${fileId}`;
-      console.log(`为文件 ${filePath} 生成URL: ${url}`);
+      // 已删除日志
       return url;
     } catch (error) {
-      console.error('生成图片URL失败:', error);
+      // 已删除日志
       return '';
     }
   });
@@ -175,7 +175,7 @@ app.on('ready', async () => {
     try {
       // 检查文件是否存在
       if (!existsSync(filePath)) {
-        console.log(`文件不存在，返回默认图片: ${filePath}`);
+        // 已删除日志
         // 返回一个默认的图片数据
         return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiI+PC9yZWN0PjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ij48L2NpcmNsZT48cG9seWxpbmUgcG9pbnRzPSIyMSAxNSAxNiAxMCA1IDIxIj48L3BvbHlsaW5lPjwvc3ZnPg==';
       }
@@ -199,7 +199,7 @@ app.on('ready', async () => {
       // 返回Data URL
       return `data:${mimeType};base64,${base64Data}`;
     } catch (error) {
-      console.error('读取图片失败:', error);
+      // 已删除日志
       // 返回一个默认的图片数据
       return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiI+PC9yZWN0PjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ij48L2NpcmNsZT48cG9seWxpbmUgcG9pbnRzPSIyMSAxNSAxNiAxMCA1IDIxIj48L3BvbHlsaW5lPjwvc3ZnPg==';
     }
@@ -227,7 +227,7 @@ app.on('ready', async () => {
 
       return { success: false, reason: 'User canceled' };
     } catch (error) {
-      console.error('保存文件失败:', error);
+      // 已删除日志
       return { success: false, error: error.message };
     }
   });
@@ -239,7 +239,7 @@ app.on('ready', async () => {
       await shell.openPath(filePath);
       return { success: true };
     } catch (error) {
-      console.error('打开文件失败:', error);
+      // 已删除日志
       return { success: false, error: error.message };
     }
   });
@@ -251,7 +251,7 @@ app.on('ready', async () => {
       shell.showItemInFolder(filePath);
       return { success: true };
     } catch (error) {
-      console.error('在文件管理器中显示文件失败:', error);
+      // 已删除日志
       return { success: false, error: error.message };
     }
   });
@@ -269,7 +269,7 @@ app.on('ready', async () => {
 
       return { success: true };
     } catch (error) {
-      console.error('导出文件失败:', error);
+      // 已删除日志
       return { success: false, error: error.message };
     }
   });

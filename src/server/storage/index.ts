@@ -75,7 +75,7 @@ export class StorageManager {
       
       // 初始化存储
       StorageManager.instance.init().catch(err => {
-        console.error('初始化存储失败:', err);
+        // 已删除日志
       });
     }
     
@@ -86,24 +86,16 @@ export class StorageManager {
    * 初始化存储
    */
   private async init(): Promise<void> {
-    try {
-      // 确保数据目录存在
-      await fs.mkdir(this.dataDir, { recursive: true });
-      
-      // 加载历史数据
-      await this.loadHistory();
-      
-      // 加载统计数据
-      await this.loadStats();
-      
-      // 加载每日统计数据
-      await this.loadDailyStats();
-      
-      console.log('存储初始化成功');
-    } catch (error) {
-      console.error('初始化存储失败:', error);
-      throw error;
-    }
+    // 确保数据目录存在
+    await fs.mkdir(this.dataDir, { recursive: true });
+    // 加载历史数据
+    await this.loadHistory();
+    
+    // 加载统计数据
+    await this.loadStats();
+    
+    // 加载每日统计数据
+    await this.loadDailyStats();
   }
   
   /**
@@ -119,7 +111,7 @@ export class StorageManager {
         await this.saveHistory();
       }
     } catch (error) {
-      console.error('加载历史数据失败:', error);
+      // 已删除日志
       this.history = [];
       await this.saveHistory();
     }
@@ -132,7 +124,7 @@ export class StorageManager {
     try {
       await fs.writeFile(this.historyFile, JSON.stringify(this.history, null, 2), 'utf-8');
     } catch (error) {
-      console.error('保存历史数据失败:', error);
+      // 已删除日志
     }
   }
   
@@ -156,7 +148,7 @@ export class StorageManager {
         await this.saveStats();
       }
     } catch (error) {
-      console.error('加载统计数据失败:', error);
+      // 已删除日志
       this.stats = {
         totalProcessedImages: 0,
         totalOriginalSize: 0,
@@ -176,7 +168,7 @@ export class StorageManager {
     try {
       await fs.writeFile(this.statsFile, JSON.stringify(this.stats, null, 2), 'utf-8');
     } catch (error) {
-      console.error('保存统计数据失败:', error);
+      // 已删除日志
     }
   }
   
@@ -193,7 +185,7 @@ export class StorageManager {
         await this.saveDailyStats();
       }
     } catch (error) {
-      console.error('加载每日统计数据失败:', error);
+      // 已删除日志
       this.dailyStats = [];
       await this.saveDailyStats();
     }
@@ -206,7 +198,7 @@ export class StorageManager {
     try {
       await fs.writeFile(this.dailyStatsFile, JSON.stringify(this.dailyStats, null, 2), 'utf-8');
     } catch (error) {
-      console.error('保存每日统计数据失败:', error);
+      // 已删除日志
     }
   }
   

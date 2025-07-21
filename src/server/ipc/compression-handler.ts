@@ -37,7 +37,7 @@ async function ensureTempDir() {
   try {
     await fs.mkdir(TEMP_DIR, { recursive: true });
   } catch (error) {
-    console.error('创建临时目录失败:', error);
+    // 已删除日志
   }
 }
 
@@ -69,12 +69,9 @@ export function initCompressionHandlers() {
       const { imagePath, settings } = args;
       let outputPath = args.outputPath;
       
-      console.log(`[IPC] 单张压缩请求: ${imagePath}`);
-      console.log(`[IPC] 单张压缩参数:`, JSON.stringify(settings, null, 2));
-      console.log(`[IPC] 文件命名设置:`, {
-        fileNaming: (settings as any).fileNaming,
-        fileExtension: (settings as any).fileExtension
-      });
+      // 已删除日志
+      // 已删除日志
+      // 已删除日志
       
       // 如果没有指定输出路径，则使用临时目录
       if (!outputPath) {
@@ -87,14 +84,14 @@ export function initCompressionHandlers() {
         );
         
         outputPath = path.join(TEMP_DIR, fileName);
-        console.log(`[IPC] 单张压缩输出路径: ${outputPath}`);
+        // 已删除日志
       }
       
       // 根据文件类型选择不同的压缩方法
       const fileExtension = getFileExtension(imagePath);
       let result: CompressionResult;
       
-      console.log(`[IPC] 单张压缩文件类型: ${fileExtension}`);
+      // 已删除日志
       
       switch (fileExtension) {
         case 'jpg':
@@ -107,7 +104,7 @@ export function initCompressionHandlers() {
           break;
           
         case 'png':
-          console.log(`[IPC] 使用PNG专用压缩方法`);
+          // 已删除日志
           result = await compressPng(imagePath, outputPath, {
             ...getDefaultPngSettings(),
             ...settings
@@ -115,7 +112,7 @@ export function initCompressionHandlers() {
           break;
           
         case 'webp':
-          console.log(`[IPC] 使用WebP专用压缩方法`);
+          // 已删除日志
           result = await compressWebp(imagePath, outputPath, {
             ...getDefaultWebpSettings(),
             ...settings
@@ -123,16 +120,16 @@ export function initCompressionHandlers() {
           break;
           
         default:
-          console.log(`[IPC] 使用通用压缩方法`);
+          // 已删除日志
           // 默认使用通用压缩方法
           result = await compressImage(imagePath, outputPath, settings);
       }
       
-      console.log(`[IPC] 单张压缩完成: ${imagePath}, 压缩率: ${result.compressionRate}`);
+      // 已删除日志
       
       return result;
     } catch (error) {
-      console.error('[IPC] 压缩图片失败:', error);
+      // 已删除日志
       return {
         success: false,
         error: error instanceof Error ? error.message : '未知错误'
@@ -150,13 +147,13 @@ export function initCompressionHandlers() {
       const { imagePaths, settings } = args;
       let outputDir = args.outputDir;
       
-      console.log(`[IPC] 批量压缩请求: ${imagePaths.length} 个文件`);
-      console.log(`[IPC] 批量压缩参数:`, JSON.stringify(settings, null, 2));
+      // 已删除日志
+      // 已删除日志
       
       // 如果没有指定输出目录，则使用临时目录
       if (!outputDir) {
         outputDir = path.join(TEMP_DIR, 'batch_' + Date.now());
-        console.log(`[IPC] 批量压缩输出目录: ${outputDir}`);
+        // 已删除日志
       }
       
       // 创建输出目录
@@ -164,7 +161,7 @@ export function initCompressionHandlers() {
       
       // 批量压缩图片 - 使用单张图片处理的逻辑，确保一致性
       const results: CompressionResult[] = [];
-      let current = 0;
+      const current = 0;
       const total = imagePaths.length;
       
       for (const imagePath of imagePaths) {
@@ -178,18 +175,18 @@ export function initCompressionHandlers() {
         
         const outputPath = path.join(outputDir, fileName);
         
-        console.log(`[IPC] 批量处理文件 ${++current}/${total}: ${imagePath} -> ${outputPath}`);
+        // 已删除日志
         
         // 使用与单张处理相同的逻辑，根据文件类型选择不同的压缩方法
         const fileExtension = getFileExtension(imagePath);
         let result: CompressionResult;
         
-        console.log(`[IPC] 批量处理文件类型: ${fileExtension}`);
+        // 已删除日志
         
         switch (fileExtension) {
           case 'jpg':
           case 'jpeg':
-            console.log(`[IPC] 使用JPEG专用压缩方法 (批量)`);
+            // 已删除日志
             result = await compressJpeg(imagePath, outputPath, {
               ...getDefaultJpegSettings(),
               ...settings
@@ -197,7 +194,7 @@ export function initCompressionHandlers() {
             break;
             
           case 'png':
-            console.log(`[IPC] 使用PNG专用压缩方法 (批量)`);
+            // 已删除日志
             result = await compressPng(imagePath, outputPath, {
               ...getDefaultPngSettings(),
               ...settings
@@ -205,7 +202,7 @@ export function initCompressionHandlers() {
             break;
             
           case 'webp':
-            console.log(`[IPC] 使用WebP专用压缩方法 (批量)`);
+            // 已删除日志
             result = await compressWebp(imagePath, outputPath, {
               ...getDefaultWebpSettings(),
               ...settings
@@ -213,14 +210,14 @@ export function initCompressionHandlers() {
             break;
             
           default:
-            console.log(`[IPC] 使用通用压缩方法 (批量)`);
+            // 已删除日志
             // 默认使用通用压缩方法
             result = await compressImage(imagePath, outputPath, { ...settings });
         }
         
         results.push(result);
         
-        console.log(`[IPC] 批量处理文件完成 ${current}/${total}: ${imagePath}, 压缩率: ${result.compressionRate}`);
+        // 已删除日志
         
         // 发送进度更新
         event.sender.send('compression-progress', {
@@ -230,7 +227,7 @@ export function initCompressionHandlers() {
         });
       }
       
-      console.log(`[IPC] 批量压缩全部完成: ${results.length} 个文件`);
+      // 已删除日志
       
       return {
         success: true,
@@ -238,7 +235,7 @@ export function initCompressionHandlers() {
         outputDir
       };
     } catch (error) {
-      console.error('[IPC] 批量压缩图片失败:', error);
+      // 已删除日志
       return {
         success: false,
         error: error instanceof Error ? error.message : '未知错误'
@@ -271,7 +268,7 @@ export function initCompressionHandlers() {
       
       return result;
     } catch (error) {
-      console.error('转换为WebP失败:', error);
+      // 已删除日志
       return {
         success: false,
         error: error instanceof Error ? error.message : '未知错误'
@@ -311,11 +308,11 @@ export function initCompressionHandlers() {
       
       return { success: true };
     } catch (error) {
-      console.error('清理临时文件失败:', error);
+      // 已删除日志
       return {
         success: false,
         error: error instanceof Error ? error.message : '未知错误'
       };
     }
   });
-} 
+}

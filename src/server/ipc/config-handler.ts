@@ -12,7 +12,7 @@ import { app } from 'electron';
 const APP_DATA_DIR = path.join(app.getPath('userData'), 'config');
 const CONFIG_FILE = path.join(APP_DATA_DIR, 'compression-settings.json');
 
-console.log(CONFIG_FILE, 'CONFIG_FILE');
+// 已删除日志
 
 // 确保配置目录存在
 async function ensureConfigDir() {
@@ -20,7 +20,7 @@ async function ensureConfigDir() {
     await fs.mkdir(APP_DATA_DIR, { recursive: true });
     return true;
   } catch (error) {
-    console.error('创建配置目录失败:', error);
+    // 已删除日志
     return false;
   }
 }
@@ -36,7 +36,7 @@ export function initConfigHandlers() {
       await fs.writeFile(CONFIG_FILE, JSON.stringify(settings, null, 2), 'utf-8');
       return { success: true };
     } catch (error) {
-      console.error('保存压缩设置失败:', error);
+      // 已删除日志
       return { success: false, error: error.message };
     }
   });
@@ -74,8 +74,8 @@ export function initConfigHandlers() {
       
       return { success: true, settings };
     } catch (error) {
-      console.error('读取压缩设置失败:', error);
+      // 已删除日志
       return { success: false, error: error.message };
     }
   });
-} 
+}
