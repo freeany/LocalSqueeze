@@ -6,15 +6,24 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { PublisherGithub } from '@electron-forge/publisher-github';
 
 const config: ForgeConfig = {
   packagerConfig: {
     "asar": {
       "unpack": "**/node_modules/{sharp,@img}/**/*"
+    },
+    icon: './src/assets/icons/icon', // 不需要扩展名，Electron Forge会根据平台自动选择
+    osxSign: {}, // 用于macOS签名
+    osxNotarize: {
+      appleId: process.env.APPLE_ID,
+      appleIdPassword: process.env.APPLE_PASSWORD,
+      teamId: process.env.APPLE_TEAM_ID
     }
   },
   rebuildConfig: {},
   makers: [
+    // Windows
     new MakerSquirrel({
       name: "LocalSqueeze",
       description: "图片压缩工具",
@@ -23,24 +32,36 @@ const config: ForgeConfig = {
       noMsi: false,
       // 设置为Windows GUI应用程序（无控制台）
       loadingGif: './src/assets/icons/win/installer.svg'
-    }), 
-    new MakerZIP({}, ['darwin']), 
-    new MakerRpm({}), 
-    new MakerDeb({})
+    }),
+    // macOS
+    new MakerZIP({}, ['darwin']),
+    // Linux
+    new MakerDeb({
+      options: {
+        icon: './src/assets/icons/png/512x512.png',
+        categories: ['Utility']
+      }
+    }),
+    new MakerRpm({
+      options: {
+        icon: './src/assets/icons/png/512x512.png',
+        categories: ['Utility']
+      }
+    }),
+    // 为所有平台创建ZIP包
+    new MakerZIP({}, ['win32', 'linux'])
   ],
   publishers: [
-    {
-      name: '@electron-forge/publisher-github',
-      config: {
-        repository: {
-          owner: 'freeany',
-          name: 'LocalSqueeze'
-        },
-        prerelease: false,
-        draft: false,
-        authToken: process.env.GITHUB_TOKEN
-      }
-    }
+    new PublisherGithub({
+      repository: {
+        owner: 'freeany',
+        name: 'LocalSqueeze'
+      },
+      prerelease: false,
+      draft: true, // 设置为true可以先创建草稿，检查后再发布
+      authToken: process.env.GITHUB_TOKEN,
+      tagPrefix: 'v' // 版本标签前缀
+    })
   ],
   plugins: [
     new VitePlugin({

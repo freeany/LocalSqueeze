@@ -9,7 +9,9 @@
     "package": "electron-forge package",
     "make": "cross-env NODE_ENV=production electron-forge make",
     "make:dev": "electron-forge make",
+    "make:all": "cross-env NODE_ENV=production electron-forge make --platform=win32 && cross-env NODE_ENV=production electron-forge make --platform=darwin && cross-env NODE_ENV=production electron-forge make --platform=linux",
     "publish": "cross-env NODE_ENV=production electron-forge publish",
+    "publish:all": "cross-env NODE_ENV=production electron-forge publish --platform=win32 && cross-env NODE_ENV=production electron-forge publish --platform=darwin && cross-env NODE_ENV=production electron-forge publish --platform=linux",
     "lint": "eslint --ext .ts,.tsx ."
   },
   "keywords": [],

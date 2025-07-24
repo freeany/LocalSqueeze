@@ -33,7 +33,35 @@ npm run package
 ### 构建可分发的安装包
 
 ```bash
+# 构建当前平台的安装包
 npm run make
+
+# 构建所有平台的安装包（Windows, macOS, Linux）
+npm run make:all
+```
+
+### 发布到GitHub Release
+
+```bash
+# 发布当前平台的安装包到GitHub Release
+npm run publish
+
+# 发布所有平台的安装包到GitHub Release
+npm run publish:all
+```
+
+### 自动化构建和发布
+
+项目配置了GitHub Actions工作流，当推送带有标签的提交时（如`v1.0.1`），会自动触发构建并发布到GitHub Release。
+
+1. 更新版本号（在`package.json`中）
+2. 提交更改并创建标签
+
+```bash
+git add .
+git commit -m "release: v1.0.1"
+git tag v1.0.1
+git push && git push --tags
 ```
 
 ## 项目架构
@@ -59,4 +87,4 @@ npm run make
 
 ## 许可证
 
-MIT 
+MIT
