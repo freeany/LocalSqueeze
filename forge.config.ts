@@ -7,6 +7,7 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import { PublisherGithub } from '@electron-forge/publisher-github';
+import path from 'path';
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -25,14 +26,39 @@ const config: ForgeConfig = {
   makers: [
     // Windows
     new MakerSquirrel({
-      name: "LocalSqueeze",
-      description: "图片压缩工具",
+      name: "LocalSqueeze", // 确保这是驼峰式的，没有空格
+      description: "Image Compression Tool", // 使用英文描述
       setupIcon: './src/assets/icons/win/icon.ico',
       setupExe: 'LocalSqueeze-Setup.exe',
       noMsi: false,
-      // 设置为Windows GUI应用程序（无控制台）
-      loadingGif: './src/assets/icons/win/installer.svg'
+      // 添加以下配置以解决安装程序闪退问题
+      // 移除setupExeTemplate配置，因为它不是MakerSquirrelConfig的有效属性
+      // 设置安装程序的显示名称（使用英文避免编码问题）
+      title: "LocalSqueeze",
+      // 添加额外的安装程序选项
+      noDelta: true,
+      // 设置为true以在安装后自动启动应用
+      // 移除 skipUpdateExe 配置项，因为它不是 MakerSquirrelConfig 的有效属性
+      // 添加codepage配置解决中文编码问题
+      // 移除 codepage 配置，因为它不是 MakerSquirrelConfig 的有效属性
     }),
+    // 添加WiX安装程序，支持选择安装路径
+    {
+      name: '@electron-forge/maker-wix',
+      config: {
+        name: "LocalSqueeze",
+        description: "Image Compression Tool",
+        manufacturer: "freeany",
+        icon: './src/assets/icons/win/icon.ico',
+        ui: {
+          chooseDirectory: true, // 允许用户选择安装路径
+        },
+        // 设置程序文件夹名称
+        programFilesFolderName: "LocalSqueeze",
+        // 设置快捷方式文件夹名称
+        shortcutFolderName: "LocalSqueeze"
+      }
+    },
     // macOS
     new MakerZIP({}, ['darwin']),
     // Linux

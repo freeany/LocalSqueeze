@@ -23,6 +23,9 @@ async function ensureTempDir() {
   }
 }
 
+// 设置应用程序ID，解决Windows上显示为"Deployment Tool"的问题
+app.setAppUserModelId('com.squirrel.LocalSqueeze.LocalSqueeze');
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
