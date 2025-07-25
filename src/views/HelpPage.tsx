@@ -128,9 +128,10 @@ const HelpPage: React.FC = () => {
   const filteredFaqs = searchQuery
     ? faqs.filter(faq =>
         faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        React.isValidElement(faq.answer) && 
-        faq.answer.props.children.some(child => 
-          typeof child === 'string' && child.toLowerCase().includes(searchQuery.toLowerCase())
+        React.isValidElement(faq.answer) && faq.answer.props && (
+          Array.isArray((faq.answer.props as any).children) 
+            ? (faq.answer.props as any).children.some(child => typeof child === 'string' && child.toLowerCase().includes(searchQuery.toLowerCase()))
+            : typeof (faq.answer.props as any).children === 'string' && (faq.answer.props as any).toLowerCase().includes(searchQuery.toLowerCase())
         )
       )
     : faqs;
@@ -149,7 +150,7 @@ const HelpPage: React.FC = () => {
         </div>
         <input
           type="text"
-          placeholder="搜索帮助内容..."
+          placeholder="搜索常见问题..."
           className="w-full pl-10 py-2 border border-input rounded-md bg-background"
           value={searchQuery}
           onChange={handleSearch}
@@ -159,40 +160,40 @@ const HelpPage: React.FC = () => {
       {/* 标签页导航 */}
       <div className="flex border-b border-border mb-6">
         <button
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-2 font-medium transition-all duration-200 ${
             activeTab === 'tutorial'
               ? 'text-primary border-b-2 border-primary'
-              : 'text-muted-foreground hover:text-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:rounded-t-md'
           }`}
           onClick={() => setActiveTab('tutorial')}
         >
           使用教程
         </button>
         <button
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-2 font-medium transition-all duration-200 ${
             activeTab === 'faq'
               ? 'text-primary border-b-2 border-primary'
-              : 'text-muted-foreground hover:text-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:rounded-t-md'
           }`}
           onClick={() => setActiveTab('faq')}
         >
           常见问题
         </button>
         <button
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-2 font-medium transition-all duration-200 ${
             activeTab === 'shortcuts'
               ? 'text-primary border-b-2 border-primary'
-              : 'text-muted-foreground hover:text-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:rounded-t-md'
           }`}
           onClick={() => setActiveTab('shortcuts')}
         >
           快捷键
         </button>
         <button
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-2 font-medium transition-all duration-200 ${
             activeTab === 'contact'
               ? 'text-primary border-b-2 border-primary'
-              : 'text-muted-foreground hover:text-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:rounded-t-md'
           }`}
           onClick={() => setActiveTab('contact')}
         >
@@ -213,7 +214,7 @@ const HelpPage: React.FC = () => {
               </div>
               <div className="ml-11">
                 <p>您可以通过拖拽图片到上传区域，或点击"选择文件"按钮来上传图片。支持JPG、PNG、GIF、WebP等常见图片格式。</p>
-                <div className="my-4 bg-muted rounded-md p-2 text-center text-muted-foreground">[图片上传示例]</div>
+                {/* <div className="my-4 bg-muted rounded-md p-2 text-center text-muted-foreground">[图片上传示例]</div> */}
                 <p>上传完成后，您可以在列表中看到所有已上传的图片，包括它们的预览缩略图和基本信息。</p>
               </div>
             </div>
@@ -225,7 +226,7 @@ const HelpPage: React.FC = () => {
               </div>
               <div className="ml-11">
                 <p>在压缩设置页面，您可以选择预设压缩级别（低、中、高）或自定义压缩参数。</p>
-                <div className="my-4 bg-muted rounded-md p-2 text-center text-muted-foreground">[压缩设置示例]</div>
+                {/* <div className="my-4 bg-muted rounded-md p-2 text-center text-muted-foreground">[压缩设置示例]</div> */}
                 <p>主要设置项包括：</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>压缩质量：调整图片的压缩程度，数值越低文件越小，但可能影响图像质量</li>
@@ -243,7 +244,7 @@ const HelpPage: React.FC = () => {
               </div>
               <div className="ml-11">
                 <p>应用压缩设置后，您可以查看压缩前后的效果对比。支持并排对比和滑动对比两种方式。</p>
-                <div className="my-4 bg-muted rounded-md p-2 text-center text-muted-foreground">[效果对比示例]</div>
+                {/* <div className="my-4 bg-muted rounded-md p-2 text-center text-muted-foreground">[效果对比示例]</div> */}
                 <p>在对比页面，您可以看到：</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>压缩前后的文件大小对比</li>
@@ -261,7 +262,7 @@ const HelpPage: React.FC = () => {
               </div>
               <div className="ml-11">
                 <p>确认压缩效果后，您可以导出压缩后的图片。在导出页面，您可以：</p>
-                <div className="my-4 bg-muted rounded-md p-2 text-center text-muted-foreground">[导出设置示例]</div>
+                {/* <div className="my-4 bg-muted rounded-md p-2 text-center text-muted-foreground">[导出设置示例]</div> */}
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>选择保存位置</li>
                   <li>设置文件命名规则</li>
@@ -274,13 +275,13 @@ const HelpPage: React.FC = () => {
           
           <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
             <h2 className="text-xl font-bold mb-4 pb-2 border-b border-border">批量处理教程</h2>
-            <p>批量处理功能允许您同时压缩多张图片，应用相同的压缩设置。</p>
-            <div className="my-4 bg-muted rounded-md p-2 text-center text-muted-foreground">[批量处理示例]</div>
+            <p>图片处理功能支持单个处理或批量处理多张图片，应用相同的压缩设置。</p>
+            {/* <div className="my-4 bg-muted rounded-md p-2 text-center text-muted-foreground">[批量处理示例]</div> */}
             <p>使用批量处理功能的步骤：</p>
             <ol className="list-decimal pl-5 mt-2 space-y-1">
               <li>上传多张图片</li>
-              <li>进入批量处理页面</li>
-              <li>配置批量压缩设置</li>
+              <li>选择所有需要处理的图片</li>
+              <li>配置压缩设置</li>
               <li>点击"开始处理"按钮</li>
               <li>等待处理完成</li>
               <li>导出所有结果</li>
@@ -369,34 +370,29 @@ const HelpPage: React.FC = () => {
           <p className="mb-4">如果您在使用过程中遇到问题或需要帮助，可以通过以下方式联系我们：</p>
           
           <div className="bg-muted/50 p-4 rounded-md mb-6">
-            <p className="mb-2"><strong>电子邮件：</strong> <a href="mailto:support@imagecompressor.example.com" className="text-primary hover:underline">support@imagecompressor.example.com</a></p>
-            <p className="mb-2"><strong>官方网站：</strong> <a href="https://www.imagecompressor.example.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center">
-              www.imagecompressor.example.com
+            <p className="mb-2"><strong>电子邮件：</strong> <a href="https://github.com/freeany/LocalSqueeze" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center">
+              GitHub 主页
               <ExternalLink className="h-3 w-3 ml-1" />
             </a></p>
-            <p><strong>反馈问题：</strong> <a href="https://github.com/example/image-compressor/issues" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center">
-              GitHub Issues
+            <p className="mb-2"><strong>官方网站：</strong> <a href="https://github.com/freeany/LocalSqueeze" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center">
+              GitHub 主页
+              <ExternalLink className="h-3 w-3 ml-1" />
+            </a></p>
+            <p><strong>反馈问题：</strong> <a href="https://github.com/freeany/LocalSqueeze" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center">
+              GitHub 主页
               <ExternalLink className="h-3 w-3 ml-1" />
             </a></p>
           </div>
           
           <p className="mb-4">您也可以查看我们的在线文档获取更详细的使用指南：</p>
-          <Button variant="default" className="flex items-center">
+          <Button variant="default" className="flex items-center" onClick={() => window.open('https://github.com/freeany/LocalSqueeze', '_blank')}>
             查看在线文档
             <ExternalLink className="h-4 w-4 ml-2" />
           </Button>
           
           <div className="mt-8 pt-4 border-t border-border">
             <h3 className="text-lg font-bold mb-2">关于</h3>
-            <p>图片压缩工具 v1.0.0</p>
-            <p>© 2023 图片压缩工具团队</p>
-            <p className="mt-2">本工具使用以下开源技术：</p>
-            <ul className="list-disc pl-5 mt-1 space-y-1">
-              <li>Electron</li>
-              <li>React</li>
-              <li>Node.js</li>
-              <li>Sharp</li>
-            </ul>
+            <p>© 2025 图片压缩工具 v1.0.0</p>
           </div>
         </div>
       )}
