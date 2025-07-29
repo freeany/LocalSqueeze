@@ -11,6 +11,7 @@ $ echo "What is LocalSqueeze?"
 
 ## 📸 项目截图
 
+<img width="1320" height="800" alt="735shots_so" src="https://github.com/user-attachments/assets/f571baa2-4340-4b64-b208-19e2494e1bd4" />
 
 
 
