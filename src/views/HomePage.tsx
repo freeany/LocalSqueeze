@@ -445,7 +445,8 @@ export default function HomePage() {
       </div>
       
       {/* 快速操作 */}
-      <div className="mt-8 flex justify-center gap-4">
+      {
+        false ?? <div className="mt-8 flex justify-center gap-4">
         <Link 
           to="/batch" 
           className="px-6 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm"
@@ -458,6 +459,7 @@ export default function HomePage() {
           查看所有历史
         </button>
       </div>
+      }
     </div>
   );
 }
