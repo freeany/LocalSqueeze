@@ -104,6 +104,13 @@ jobs:
         shell: pwsh
         timeout-minutes: 15
       
+      - name: Setup macOS environment (macOS only)
+        if: runner.os == 'macOS'
+        run: |
+          echo "Building macOS application without code signing"
+          echo "The generated app will be unsigned and require user approval to run"
+        shell: bash
+
       - name: Build and publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

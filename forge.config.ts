@@ -15,12 +15,10 @@ const config: ForgeConfig = {
       "unpack": "**/node_modules/{sharp,@img}/**/*"
     },
     icon: './src/assets/icons/icon', // 不需要扩展名，Electron Forge会根据平台自动选择
-    osxSign: {}, // 用于macOS签名
-    osxNotarize: {
-      appleId: process.env.APPLE_ID,
-      appleIdPassword: process.env.APPLE_PASSWORD,
-      teamId: process.env.APPLE_TEAM_ID
-    }
+    // macOS签名配置 - 设为undefined以跳过签名，生成未签名应用
+     osxSign: undefined,
+    // macOS公证配置 - 设为undefined以跳过公证
+    osxNotarize: undefined
   },
   rebuildConfig: {},
   makers: [
