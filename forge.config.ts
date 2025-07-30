@@ -84,7 +84,7 @@ const config: ForgeConfig = {
         name: 'LocalSqueeze'
       },
       prerelease: false,
-      draft: false, // 设置为false，直接发布而不是草稿
+      draft: true, // 设置为true，发布到草稿箱，需要手动确认发布
       authToken: process.env.GITHUB_TOKEN,
       tagPrefix: 'v', // 版本标签前缀
       generateReleaseNotes: true, // 自动生成发布说明
