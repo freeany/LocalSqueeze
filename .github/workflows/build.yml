@@ -2,8 +2,8 @@ name: Build and Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - mac
 
 permissions:
   contents: write
@@ -15,7 +15,7 @@ jobs:
     
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [macos-latest]
     
     steps:
       - name: Check out Git repository
@@ -45,8 +45,5 @@ jobs:
       - name: Build and publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 如果需要macOS签名，请添加以下环境变量
-          # APPLE_ID: ${{ secrets.APPLE_ID }}
-          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # 不进行macOS应用签名和公证
         run: npm run publish

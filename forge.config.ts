@@ -7,20 +7,14 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import { PublisherGithub } from '@electron-forge/publisher-github';
-import path from 'path';
 
 const config: ForgeConfig = {
   packagerConfig: {
     "asar": {
       "unpack": "**/node_modules/{sharp,@img}/**/*"
     },
-    icon: './src/assets/icons/icon', // 不需要扩展名，Electron Forge会根据平台自动选择
-    osxSign: {}, // 用于macOS签名
-    osxNotarize: {
-      appleId: process.env.APPLE_ID,
-      appleIdPassword: process.env.APPLE_PASSWORD,
-      teamId: process.env.APPLE_TEAM_ID
-    }
+    icon: './src/assets/icons/icon' // 不需要扩展名，Electron Forge会根据平台自动选择
+    // 不进行macOS应用签名和公证
   },
   rebuildConfig: {},
   makers: [
