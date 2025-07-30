@@ -84,9 +84,15 @@ const config: ForgeConfig = {
         name: 'LocalSqueeze'
       },
       prerelease: false,
-      draft: true, // 设置为true可以先创建草稿，检查后再发布
+      draft: false, // 设置为false，直接发布而不是草稿
       authToken: process.env.GITHUB_TOKEN,
-      tagPrefix: 'v' // 版本标签前缀
+      tagPrefix: 'v', // 版本标签前缀
+      generateReleaseNotes: true, // 自动生成发布说明
+      octokitOptions: {
+        retry: {
+          doNotRetry: ['HttpError']
+        }
+      }
     })
   ],
   plugins: [
