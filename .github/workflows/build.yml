@@ -11,7 +11,7 @@ jobs:
     
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [windows-latest]
     
     steps:
       - name: Check out Git repository
@@ -26,11 +26,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: Install system dependencies (Linux only)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
       
       - name: Build and publish
         env:
