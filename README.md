@@ -1,12 +1,13 @@
-# <img src="./src/assets/icon.svg" width="30" /> LocalSqueeze
+<div align="center">
+  <img src="./src/assets/icon.svg" width="120" height="120" alt="LocalSqueeze Logo" />
 
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=for-the-badge&logo=windows&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge&logo=license&logoColor=white)
+# 					LocalSqueeze
 
-```bash
-$ echo "What is LocalSqueeze?"
-> 一款高效的本地图片压缩工具，保持图片质量的同时最大程度减小文件大小
-```
+​			  ![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-0078D4?style=for-the-badge&logo=windows&logoColor=white) ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black) ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge) ![Version](https://img.shields.io/badge/version-v1.0.3-blue?style=for-the-badge) ![Stars](https://img.shields.io/github/stars/freeany/LocalSqueeze?style=for-the-badge&logo=github)
+
+**一款功能丰富、高效灵活的跨平台桌面图片压缩应用**
+
+</div>
 
 ## 📸 项目截图
 

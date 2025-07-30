@@ -1,6 +1,6 @@
-# 🚀 LocalSqueeze v1.0.2 发布公告
+# 🚀 LocalSqueeze v1.0.3 发布公告
 
-![LocalSqueeze](https://img.shields.io/badge/LocalSqueeze-v1.0.2-blue?style=for-the-badge&logo=electron&logoColor=white)
+![LocalSqueeze](https://img.shields.io/badge/LocalSqueeze-v1.0.3-blue?style=for-the-badge&logo=electron&logoColor=white)
 ![Platform](https://img.shields.io/badge/平台-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=for-the-badge&logo=windows&logoColor=white)
 ![License](https://img.shields.io/badge/许可证-MIT-green?style=for-the-badge&logo=license&logoColor=white)
 
@@ -8,13 +8,21 @@
 
 ```bash
 $ git status
-> 准备就绪：LocalSqueeze v1.0.2 现已发布！
+> 准备就绪：LocalSqueeze v1.0.3 现已发布！
 ```
 
-### 🛠️ 构建优化
+### 🚀 发布流程优化
 
-- ⚙️ **更新版本至 1.0.2**：稳定性和性能提升
-- 📦 **添加 env-cmd 依赖**：优化环境变量管理，提升跨平台兼容性
+- ⚙️ **修改发布流程**：优化 GitHub Actions 构建和发布流程，提升发布效率
+- 🔧 **修复发布权限问题**：解决 GitHub Actions 发布权限相关问题
+- 📦 **分离发布脚本**：分离 publish 和 publish:local 脚本，支持不同发布环境
+
+### 🛠️ 构建系统增强
+
+- 🏗️ **多平台构建支持**：更新构建流程以支持 Windows、macOS 和 Linux 多平台
+- 🍎 **macOS DMG 打包**：添加 macOS DMG 打包支持，提供更好的 macOS 用户体验
+- 📋 **GitHub Actions 版本更新**：更新 GitHub Actions 使用的 actions 版本至 v4
+- ⚡ **构建配置优化**：优化整体构建配置，提升构建速度和稳定性
 
 ### 🐛 问题修复
 
@@ -64,9 +72,9 @@ npm start
 
 或直接下载最新的安装包：
 
-- 💾 [Windows 安装包](https://github.com/freeany/LocalSqueeze/releases/download/v1.0.2/LocalSqueeze-Setup.exe)
-- 🍎 [macOS 安装包](https://github.com/freeany/LocalSqueeze/releases/download/v1.0.2/LocalSqueeze.dmg)
-- 🐧 [Linux 安装包](https://github.com/freeany/LocalSqueeze/releases/download/v1.0.2/localsqueeze_1.0.2_amd64.deb)
+- 💾 [Windows 安装包](https://github.com/freeany/LocalSqueeze/releases/download/v1.0.3/LocalSqueeze-Setup.exe)
+- 🍎 [macOS 安装包](https://github.com/freeany/LocalSqueeze/releases/download/v1.0.3/LocalSqueeze.dmg)
+- 🐧 [Linux 安装包](https://github.com/freeany/LocalSqueeze/releases/download/v1.0.3/localsqueeze_1.0.3_amd64.deb)
 
 ## 🔜 未来计划
 
