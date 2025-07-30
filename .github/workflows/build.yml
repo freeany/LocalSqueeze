@@ -37,35 +37,72 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global core.autocrlf false
+          git config --global core.longpaths true
+        shell: bash
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: ${{ runner.os == 'Windows' && 'npm' || 'npm' }}
+          cache: 'npm'
           cache-dependency-path: package-lock.json
 
       - name: Setup Windows environment
         if: runner.os == 'Windows'
         run: |
+          # 强制清理可能存在的node_modules
+          if (Test-Path "node_modules") {
+            Write-Host "Removing existing node_modules..."
+            Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 2
+          }
           # 设置npm配置以避免权限问题
           npm config set cache C:\npm-cache --global
           npm config set tmp C:\npm-tmp --global
+          npm config set prefix C:\npm-prefix --global
           # 创建临时目录
           New-Item -ItemType Directory -Force -Path C:\npm-cache
           New-Item -ItemType Directory -Force -Path C:\npm-tmp
+          New-Item -ItemType Directory -Force -Path C:\npm-prefix
+          # 设置环境变量
+          echo "NPM_CONFIG_CACHE=C:\npm-cache" >> $env:GITHUB_ENV
+          echo "NPM_CONFIG_TMP=C:\npm-tmp" >> $env:GITHUB_ENV
+          # 设置更宽松的文件权限
+          echo "NPM_CONFIG_FUND=false" >> $env:GITHUB_ENV
+          echo "NPM_CONFIG_AUDIT=false" >> $env:GITHUB_ENV
         shell: pwsh
       
       - name: Install dependencies
         run: |
           if ($env:RUNNER_OS -eq "Windows") {
             # Windows特定的npm安装，处理权限问题
-            npm ci --no-optional --legacy-peer-deps --prefer-offline
+            Write-Host "Installing dependencies on Windows..."
+            # 清理npm缓存
+            npm cache clean --force
+            # 使用更安全的安装参数
+            npm ci --no-optional --legacy-peer-deps --prefer-offline --no-fund --no-audit --ignore-scripts
+            # 如果失败，尝试使用npm install
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "npm ci failed, trying npm install..."
+              Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
+              npm install --no-optional --legacy-peer-deps --no-fund --no-audit --ignore-scripts
+            }
           } else {
             npm ci
           }
         shell: pwsh
+        timeout-minutes: 15
       
       - name: Build and publish
         env:
@@ -77,9 +114,22 @@ jobs:
         run: |
           if ($env:RUNNER_OS -eq "Windows") {
             # Windows特定的发布命令，增加超时和重试
+            Write-Host "Building and publishing on Windows..."
+            # 设置更多环境变量以避免权限问题
+            $env:ELECTRON_CACHE = "C:\electron-cache"
+            $env:npm_config_cache = "C:\npm-cache"
+            $env:npm_config_tmp = "C:\npm-tmp"
+            # 创建electron缓存目录
+            New-Item -ItemType Directory -Force -Path C:\electron-cache -ErrorAction SilentlyContinue
+            # 运行构建
             npm run publish --verbose
+            # 检查构建结果
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "Build failed with exit code $LASTEXITCODE"
+              exit $LASTEXITCODE
+            }
           } else {
             npm run publish
           }
         shell: pwsh
-        timeout-minutes: 30
+        timeout-minutes: 45

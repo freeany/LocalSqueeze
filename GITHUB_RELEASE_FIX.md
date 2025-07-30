@@ -7,6 +7,11 @@
 2. **单平台发布**: 只能发布 Windows 包，缺少 macOS 支持
 3. **Windows 构建错误**: `npm warn cleanup Failed to remove some directories` 和 `EPERM: operation not permitted`
 
+### Windows构建错误
+- npm清理目录时权限问题（EPERM: operation not permitted）
+- 无法删除node_modules中的某些文件和目录
+- npm安装过程中的权限冲突和文件锁定问题
+
 ## 问题原因
 
 1. **权限不足**: GitHub Actions 默认的 `GITHUB_TOKEN` 权限不足以创建 release
@@ -24,7 +29,17 @@
 - **跨平台构建矩阵**: 添加 `[windows-latest, macos-latest]` 支持多平台
 - **使用现代 Actions**: 替换已弃用的 `actions/create-release@v1`
 - **Windows 特殊处理**: 配置专用的 npm 缓存路径和安装参数
+  - **强制清理**: 构建前强制删除现有node_modules目录
+  - **npm缓存路径**: 设置专用的Windows缓存目录
+  - **安装参数**: `--no-optional --legacy-peer-deps --prefer-offline --no-fund --no-audit --ignore-scripts`
+  - **重试机制**: npm ci失败时自动尝试npm install
+  - **环境变量**: 禁用fund和audit检查，设置专用缓存路径
 - **错误处理**: 添加超时设置和详细日志输出
+  - **安装超时**: 15分钟npm安装超时
+  - **构建超时**: 45分钟构建超时防止卡死
+  - **详细日志**: `--verbose`参数输出详细构建信息
+  - **缓存管理**: 强制清理npm缓存，设置Electron专用缓存
+  - **退出码检查**: 构建失败时正确返回错误码
 
 ### 2. 优化 Forge 配置 (`forge.config.ts`)
 
