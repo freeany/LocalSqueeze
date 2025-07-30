@@ -25,10 +25,10 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'npm'
@@ -50,7 +50,7 @@ jobs:
         run: npm run make
         
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.platform }}
           path: out/make/
@@ -62,13 +62,13 @@ jobs:
     
     steps:
       - name: Download Windows Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: build-win32
           path: ./artifacts/win32/
           
       - name: Download macOS Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: build-darwin
           path: ./artifacts/darwin/
