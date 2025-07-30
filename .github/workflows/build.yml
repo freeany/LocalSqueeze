@@ -4,18 +4,24 @@ on:
   push:
     branches:
       - mac
+      - master
+      - main
 
 permissions:
   contents: write
   packages: write
 
 jobs:
-  release:
+  build:
     runs-on: ${{ matrix.os }}
     
     strategy:
       matrix:
-        os: [macos-latest]
+        include:
+          - os: windows-latest
+            platform: win32
+          - os: macos-latest
+            platform: darwin
     
     steps:
       - name: Check out Git repository
@@ -30,8 +36,44 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
+      - name: Build (Windows)
+        if: matrix.os == 'windows-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run make
+        
+      - name: Build (macOS)
+        if: matrix.os == 'macos-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 不进行macOS应用签名和公证
+        run: npm run make
+        
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.platform }}
+          path: out/make/
+          
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag' || contains(github.ref, 'refs/heads/')
+    
+    steps:
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-win32
+          path: ./artifacts/win32/
+          
+      - name: Download macOS Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-darwin
+          path: ./artifacts/darwin/
+          
       - name: Create GitHub Release
-        id: create_release
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,9 +83,5 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
-      
-      - name: Build and publish
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 不进行macOS应用签名和公证
-        run: npm run publish
+          files: |
+            ./artifacts/**/*
