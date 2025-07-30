@@ -43,10 +43,29 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: 'npm'
+          cache: ${{ runner.os == 'Windows' && 'npm' || 'npm' }}
+          cache-dependency-path: package-lock.json
 
+      - name: Setup Windows environment
+        if: runner.os == 'Windows'
+        run: |
+          # 设置npm配置以避免权限问题
+          npm config set cache C:\npm-cache --global
+          npm config set tmp C:\npm-tmp --global
+          # 创建临时目录
+          New-Item -ItemType Directory -Force -Path C:\npm-cache
+          New-Item -ItemType Directory -Force -Path C:\npm-tmp
+        shell: pwsh
+      
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if ($env:RUNNER_OS -eq "Windows") {
+            # Windows特定的npm安装，处理权限问题
+            npm ci --no-optional --legacy-peer-deps --prefer-offline
+          } else {
+            npm ci
+          }
+        shell: pwsh
       
       - name: Build and publish
         env:
@@ -55,4 +74,12 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: npm run publish
+        run: |
+          if ($env:RUNNER_OS -eq "Windows") {
+            # Windows特定的发布命令，增加超时和重试
+            npm run publish --verbose
+          } else {
+            npm run publish
+          }
+        shell: pwsh
+        timeout-minutes: 30

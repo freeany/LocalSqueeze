@@ -5,6 +5,7 @@
 在使用 Electron Forge 的 GitHub Publisher 时遇到以下问题：
 1. **权限错误**: `[FAILED: Resource not accessible by integration]`
 2. **单平台发布**: 只能发布 Windows 包，缺少 macOS 支持
+3. **Windows 构建错误**: `npm warn cleanup Failed to remove some directories` 和 `EPERM: operation not permitted`
 
 ## 问题原因
 
@@ -12,6 +13,7 @@
 2. **Release 不存在**: Publisher 尝试查找已存在的 release，但 tag 推送时 release 还未创建
 3. **配置问题**: Forge 配置中的某些选项可能导致权限问题
 4. **平台限制**: 工作流只配置了 Windows 平台构建
+5. **Windows 文件权限**: Windows 系统上 npm 清理缓存时遇到文件占用或权限问题
 
 ## 解决方案
 
@@ -21,6 +23,8 @@
 - **分离 Release 创建**: 将 release 创建和构建分为两个独立的 job
 - **跨平台构建矩阵**: 添加 `[windows-latest, macos-latest]` 支持多平台
 - **使用现代 Actions**: 替换已弃用的 `actions/create-release@v1`
+- **Windows 特殊处理**: 配置专用的 npm 缓存路径和安装参数
+- **错误处理**: 添加超时设置和详细日志输出
 
 ### 2. 优化 Forge 配置 (`forge.config.ts`)
 
