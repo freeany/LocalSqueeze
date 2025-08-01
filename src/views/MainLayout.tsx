@@ -19,14 +19,19 @@ export default function MainLayout() {
   }, []);
 
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('dark');
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   };
 
   if (!isMounted) return null; // 避免初始渲染闪烁
 
   return (
-    <div className={`h-full bg-background transition-colors duration-300 ${isDarkMode ? 'dark' : ''}`}>
+    <div className="h-full bg-background transition-colors duration-300">
       <div className="flex flex-col h-full bg-background text-foreground shadow-xl overflow-hidden">
         {/* 顶部导航栏 - 固定 */}
         <header className="bg-primary text-primary-foreground px-6 py-4 flex justify-between items-center shadow-md z-10 sticky top-0">
@@ -38,7 +43,7 @@ export default function MainLayout() {
             />
             图片压缩工具
           </div>
-          <ThemeToggle />
+          <ThemeToggle isDarkMode={isDarkMode} onToggle={toggleTheme} />
         </header>
         
         {/* 主内容区域 */}
@@ -67,4 +72,4 @@ export default function MainLayout() {
       </div>
     </div>
   );
-} 
+}

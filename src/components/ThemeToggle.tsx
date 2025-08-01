@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react';
 import { MoonIcon, SunIcon } from 'lucide-react';
 
-export default function ThemeToggle() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+interface ThemeToggleProps {
+  isDarkMode: boolean;
+  onToggle: () => void;
+}
+
+export default function ThemeToggle({ isDarkMode, onToggle }: ThemeToggleProps) {
   const [isAnimating, setIsAnimating] = useState(false);
 
-  useEffect(() => {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDarkMode(prefersDark);
-  }, []);
-
-  const toggleTheme = () => {
+  const handleToggle = () => {
     setIsAnimating(true);
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('dark');
+    onToggle();
     
     // 动画结束后重置状态
     setTimeout(() => {
@@ -27,7 +25,7 @@ export default function ThemeToggle() {
         {isDarkMode ? '深色' : '浅色'}
       </span>
       <button
-        onClick={toggleTheme}
+        onClick={handleToggle}
         className="relative inline-flex h-7 w-12 items-center rounded-full border-2 border-transparent bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         aria-label={isDarkMode ? "切换到浅色模式" : "切换到深色模式"}
       >
@@ -49,4 +47,4 @@ export default function ThemeToggle() {
       </button>
     </div>
   );
-} 
+}

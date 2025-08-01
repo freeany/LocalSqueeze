@@ -151,35 +151,35 @@ const ExportPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-4">导出管理</h1>
-      <p className="text-gray-600 mb-6">管理和导出您处理过的图片</p>
+      <h1 className="text-2xl font-bold mb-4 text-foreground">导出管理</h1>
+      <p className="text-muted-foreground mb-6">管理和导出您处理过的图片</p>
       
       {/* 导出概览 */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">导出概览</h2>
+      <div className="bg-card rounded-lg shadow p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4 text-foreground">导出概览</h2>
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-gray-500">可导出图片</p>
-            <p className="text-2xl font-bold">{processedImages.length}</p>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+              <p className="text-blue-600 dark:text-blue-400">可导出图片</p>
+              <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">{processedImages.length}</p>
           </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-gray-500">原始总大小</p>
-            <p className="text-2xl font-bold">{formatFileSize(stats.totalOriginalSize)}</p>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+              <p className="text-blue-600 dark:text-blue-400">原始总大小</p>
+              <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">{formatFileSize(stats.totalOriginalSize)}</p>
           </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-gray-500">压缩后总大小</p>
-            <p className="text-2xl font-bold">{formatFileSize(stats.totalCompressedSize)}</p>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+              <p className="text-blue-600 dark:text-blue-400">压缩后总大小</p>
+              <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">{formatFileSize(stats.totalCompressedSize)}</p>
           </div>
         </div>
       </div>
       
       {/* 导出设置 */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">导出设置</h2>
+      <div className="bg-card rounded-lg shadow p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4 text-foreground">导出设置</h2>
         
         {/* 导出位置 */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">导出位置</label>
+          <label className="block text-sm font-medium text-foreground mb-1">导出位置</label>
           <div className="flex">
             <Input 
               value={exportSettings.outputDirectory} 
@@ -187,7 +187,7 @@ const ExportPage: React.FC = () => {
               placeholder="请选择导出目录" 
               className="flex-1 mr-2" 
             />
-            <Button onClick={selectOutputDirectory}>选择目录</Button>
+            <Button onClick={selectOutputDirectory} className="cursor-pointer">选择目录</Button>
           </div>
         </div>
         
@@ -195,19 +195,19 @@ const ExportPage: React.FC = () => {
         
         {/* 文件命名（已禁用） */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-500 mb-1">文件命名（暂不可用）</label>
+          <label className="block text-sm font-medium text-muted-foreground mb-1">文件命名（暂不可用）</label>
           <Input 
             value={exportSettings.fileNaming}
             disabled={true}
             placeholder="例如: {filename}_exported"
             className="w-full mb-1 opacity-70 cursor-not-allowed"
           />
-          <p className="text-xs text-gray-400">可用变量: {'{filename}'} - 原始文件名, {'{date}'} - 当前日期, {'{time}'} - 当前时间</p>
+          <p className="text-xs text-muted-foreground">可用变量: {'{filename}'} - 原始文件名, {'{date}'} - 当前日期, {'{time}'} - 当前时间</p>
         </div>
         
         {/* 导出格式 */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">导出格式</label>
+          <label className="block text-sm font-medium text-foreground mb-2">导出格式</label>
           <RadioGroup 
             value={exportSettings.exportFormat}
             onValueChange={(value) => setExportSettings(prev => ({ ...prev, exportFormat: value }))}
@@ -218,28 +218,28 @@ const ExportPage: React.FC = () => {
                 id="formatOriginal" 
                 value="original"
               />
-              <label htmlFor="formatOriginal" className="ml-2 text-sm text-gray-700">原始格式</label>
+              <label htmlFor="formatOriginal" className="ml-2 text-sm text-foreground">原始格式</label>
             </div>
             <div className="flex items-center">
               <Radio 
                 id="formatJpeg" 
                 value="jpeg"
               />
-              <label htmlFor="formatJpeg" className="ml-2 text-sm text-gray-700">JPEG</label>
+              <label htmlFor="formatJpeg" className="ml-2 text-sm text-foreground">JPEG</label>
             </div>
             <div className="flex items-center">
               <Radio 
                 id="formatPng" 
                 value="png"
               />
-              <label htmlFor="formatPng" className="ml-2 text-sm text-gray-700">PNG</label>
+              <label htmlFor="formatPng" className="ml-2 text-sm text-foreground">PNG</label>
             </div>
             <div className="flex items-center">
               <Radio 
                 id="formatWebp" 
                 value="webp"
               />
-              <label htmlFor="formatWebp" className="ml-2 text-sm text-gray-700">WebP</label>
+              <label htmlFor="formatWebp" className="ml-2 text-sm text-foreground">WebP</label>
             </div>
           </RadioGroup>
         </div>
@@ -254,9 +254,9 @@ const ExportPage: React.FC = () => {
                 setExportSettings(prev => ({ ...prev, overwriteExisting: !!checked }))
               }
             />
-            <label htmlFor="overwriteExisting" className="ml-2 text-sm text-gray-700">
-              覆盖已有文件
-            </label>
+            <label htmlFor="overwriteExisting" className="ml-2 text-sm text-foreground">
+                覆盖已存在的文件
+              </label>
           </div>
           <div>
             <Checkbox 
@@ -266,9 +266,9 @@ const ExportPage: React.FC = () => {
                 setExportSettings(prev => ({ ...prev, openAfterExport: !!checked }))
               }
             />
-            <label htmlFor="openAfterExport" className="ml-2 text-sm text-gray-700">
-              导出后打开文件夹
-            </label>
+            <label htmlFor="openAfterExport" className="ml-2 text-sm text-foreground">
+                导出后打开文件夹
+              </label>
           </div>
           <div>
             <Checkbox 
@@ -278,33 +278,33 @@ const ExportPage: React.FC = () => {
                 setExportSettings(prev => ({ ...prev, saveAsDefault: !!checked }))
               }
             />
-            <label htmlFor="saveAsDefault" className="ml-2 text-sm text-gray-700">
-              保存设置为默认
-            </label>
+            <label htmlFor="saveAsDefault" className="ml-2 text-sm text-foreground">
+                保存为默认设置
+              </label>
           </div>
         </div>
       </div>
       
       {/* 待导出图片列表 */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">待导出图片 ({selectedImages.length}/{processedImages.length})</h2>
+      <div className="bg-card rounded-lg shadow p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-foreground">待导出图片 ({selectedImages.length}/{processedImages.length})</h2>
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm" onClick={toggleSelectAll}>
+            <Button variant="outline" size="sm" onClick={toggleSelectAll} className="cursor-pointer">
               {selectedImages.length === processedImages.length ? '取消全选' : '全选'}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setSelectedImages([])}>取消选择</Button>
-            <Button variant="outline" size="sm" onClick={selectCompressedOnly}>仅选择已压缩</Button>
+            <Button variant="outline" size="sm" onClick={() => setSelectedImages([])} className="cursor-pointer">取消选择</Button>
+            <Button variant="outline" size="sm" onClick={selectCompressedOnly} className="cursor-pointer">仅选择已压缩</Button>
           </div>
         </div>
         
         {isLoading ? (
           <div className="text-center py-10">
-            <p>加载中...</p>
+            <p className="text-foreground">加载中...</p>
           </div>
         ) : processedImages.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-gray-500">没有可导出的图片</p>
+            <p className="text-muted-foreground">没有可导出的图片</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -313,14 +313,20 @@ const ExportPage: React.FC = () => {
                 key={image.id} 
                 className={cn(
                   "border rounded-lg overflow-hidden",
-                  selectedImages.includes(image.id) ? "border-blue-500" : "border-gray-200"
+                  selectedImages.includes(image.id) ? "border-primary" : "border-border"
                 )}
               >
                 <div className="relative">
                   <div className="absolute top-2 left-2">
-                    <Checkbox 
+                    <Checkbox
                       checked={selectedImages.includes(image.id)}
-                      onCheckedChange={() => toggleImageSelection(image.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedImages([...selectedImages, image.id]);
+                        } else {
+                          setSelectedImages(selectedImages.filter(imgId => imgId !== image.id));
+                        }
+                      }}
                       className="h-5 w-5 bg-white/90"
                     />
                   </div>
@@ -335,12 +341,12 @@ const ExportPage: React.FC = () => {
                     }}
                   />
                 </div>
-                <div className="p-3">
-                  <p className="font-medium truncate" title={image.name}>{image.name}</p>
-                  <div className="text-sm text-gray-500 mt-1">
+                <div className="p-3 bg-card">
+                    <p className="font-medium truncate text-foreground" title={image.name}>{image.name}</p>
+                    <div className="text-sm text-muted-foreground mt-1">
                     <p>
                       {formatFileSize(image.originalSize)} → {formatFileSize(image.compressedSize)}
-                      <span className="ml-2 text-green-600">{image.compressionRate}</span>
+                      <span className="ml-2 text-green-600 dark:text-green-400">{image.compressionRate}</span>
                     </p>
                     <p>{image.width} × {image.height} · {image.format.toUpperCase()}</p>
                   </div>
@@ -349,6 +355,7 @@ const ExportPage: React.FC = () => {
                       variant="ghost" 
                       size="sm"
                       onClick={() => window.electron.ipcRenderer.invoke('open-file', image.outputPath)}
+                      className="cursor-pointer"
                     >
                       预览
                     </Button>
@@ -356,6 +363,7 @@ const ExportPage: React.FC = () => {
                       variant="ghost" 
                       size="sm"
                       onClick={() => removeImage(image.id)}
+                      className="cursor-pointer"
                     >
                       移除
                     </Button>
@@ -368,12 +376,18 @@ const ExportPage: React.FC = () => {
         
         {/* 底部操作按钮 */}
         <div className="mt-6 flex justify-between">
-          <Button 
+         <div className='flex items-center'>
+           <Button 
             onClick={exportSelectedImages}
             disabled={selectedImages.length === 0 || !exportSettings.outputDirectory}
+            className={selectedImages.length === 0 || !exportSettings.outputDirectory ? "cursor-not-allowed" : "cursor-pointer"}
           >
             导出选中图片 ({selectedImages.length})
           </Button>
+          {!exportSettings.outputDirectory ? (
+            <div className="text-red-500 text-sm ml-2">请先选择导出目录</div>
+          ) : null}
+         </div>
         </div>
       </div>
     </div>

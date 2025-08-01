@@ -537,10 +537,10 @@ export default function CompressionSettings() {
                 ].map((preset) => (
                   <button
                     key={preset.value}
-                    className={`px-4 py-2 rounded-md border transition-colors ${
+                    className={`px-4 py-2 rounded-md border transition-colors cursor-pointer ${
                       activePreset === preset.value 
                         ? 'bg-primary/10 border-primary text-primary' 
-                        : 'bg-muted border-border hover:bg-muted/80'
+                        : 'bg-primary/10 border-border hover:bg-primary/20'
                     }`}
                     onClick={() => handlePresetClick(preset.value)}
                   >
@@ -548,10 +548,10 @@ export default function CompressionSettings() {
                   </button>
                 ))}
                 <button
-                  className={`px-4 py-2 rounded-md border transition-colors ${
+                  className={`px-4 py-2 rounded-md border transition-colors cursor-pointer ${
                     activePreset === '自定义' 
                       ? 'bg-primary/10 border-primary text-primary' 
-                      : 'bg-muted border-border hover:bg-muted/80'
+                      : 'bg-primary/10 border-border hover:bg-primary/20'
                   }`}
                   onClick={switchToCustomPreset}
                 >
@@ -595,7 +595,7 @@ export default function CompressionSettings() {
                     max="100"
                     value={100 - compressionQuality}
                     onChange={(e) => handleQualityChange(100 - parseInt(e.target.value))}
-                    className="flex-1 h-2 bg-muted rounded-full appearance-none cursor-pointer"
+                    className="flex-1 h-2 bg-primary/10 rounded-full appearance-none cursor-pointer"
                   />
                   <span className="font-medium w-12 text-center">{100 - compressionQuality}%</span>
                 </div>
@@ -648,6 +648,28 @@ export default function CompressionSettings() {
               </div>
               
               {/* 高级选项 */}
+              <div className="mb-6">
+                <label className="block font-medium mb-1">文件命名示例</label>
+                <p className="text-sm text-muted-foreground mb-2">常用的文件命名模板</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="p-2 bg-primary/10 rounded-md">
+                    <code className="text-xs">{'{filename}_compressed'}</code>
+                  </div>
+                  <div className="p-2 bg-primary/10 rounded-md">
+                    <code className="text-xs">{'{filename}_{timestamp}'}</code>
+                  </div>
+                  <div className="p-2 bg-primary/10 rounded-md">
+                    <code className="text-xs">{'{filename}_optimized'}</code>
+                  </div>
+                  <div className="p-2 bg-primary/10 rounded-md">
+                    <code className="text-xs">compressed_{'{filename}'}</code>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  <span className="font-medium">变量说明：</span> {'{filename}'} = 原文件名，{'{timestamp}'} = 时间戳
+                </p>
+              </div>
+              
               <div>
                 <label className="block font-medium mb-1">高级选项</label>
                 <p className="text-sm text-muted-foreground mb-2">这些功能暂时不开放</p>
@@ -711,11 +733,11 @@ export default function CompressionSettings() {
                   {['JPEG', 'PNG', 'WebP', 'GIF'].map((format) => (
                     <button
                       key={format}
-                      className={`px-4 py-2 rounded-md border transition-colors ${
+                      className={`px-4 py-2 rounded-md border transition-colors cursor-pointer ${
                         outputFormat.toUpperCase() === format.toUpperCase() && !keepFormat
                           ? 'bg-primary/10 border-primary text-primary' 
-                          : 'bg-muted border-border hover:bg-muted/80'
-                      } ${keepFormat ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                          : 'bg-primary/10 border-border hover:bg-primary/20'
+                      } ${keepFormat ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={() => !keepFormat && handleOutputFormatChange(format)}
                       disabled={keepFormat}
                     >
@@ -728,19 +750,19 @@ export default function CompressionSettings() {
                 <div className="mt-4 text-sm text-muted-foreground">
                   <p className="mb-1 font-medium">格式简介：</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="p-2 bg-muted/30 rounded-md">
+                    <div className="p-2 bg-primary/10 rounded-md">
                       <p className="font-medium">JPEG</p>
                       <p>照片最佳选择，高压缩率，不支持透明</p>
                     </div>
-                    <div className="p-2 bg-muted/30 rounded-md">
+                    <div className="p-2 bg-primary/10 rounded-md">
                       <p className="font-medium">PNG</p>
                       <p>无损压缩，支持透明，适合图标和截图</p>
                     </div>
-                    <div className="p-2 bg-muted/30 rounded-md">
+                    <div className="p-2 bg-primary/10 rounded-md">
                       <p className="font-medium">WebP</p>
                       <p>更小的文件体积，同时支持透明和高压缩</p>
                     </div>
-                    <div className="p-2 bg-muted/30 rounded-md">
+                    <div className="p-2 bg-primary/10 rounded-md">
                       <p className="font-medium">GIF</p>
                       <p>支持动画，256色限制，简单图像适用</p>
                     </div>

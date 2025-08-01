@@ -43,8 +43,8 @@ const createWindow = () => {
   
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1600,
+    height: 900,
     icon: path.join(__dirname, '../assets/icons/icon.png'),
     // 在生产环境下最大化窗口
     show: false, // 先隐藏窗口，等准备好后再显示，避免闪烁
