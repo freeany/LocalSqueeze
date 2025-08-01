@@ -15,8 +15,8 @@
     "publish": "cross-env NODE_ENV=production electron-forge publish",
     "publish:local": "env-cmd cross-env NODE_ENV=production electron-forge publish",
     "publish:win": "env-cmd cross-env NODE_ENV=production electron-forge publish --platform=win32",
-    "publish:mac": "cross-env NODE_ENV=production electron-forge publish --platform=darwin",
-    "publish:all": "cross-env NODE_ENV=production electron-forge publish --platform=win32 && cross-env NODE_ENV=production electron-forge publish --platform=darwin && cross-env NODE_ENV=production electron-forge publish --platform=linux",
+    "publish:mac": "env-cmd cross-env NODE_ENV=production electron-forge publish --platform=darwin",
+    "publish:all": "env-cmd cross-env NODE_ENV=production electron-forge publish --platform=win32 && cross-env NODE_ENV=production electron-forge publish --platform=darwin && cross-env NODE_ENV=production electron-forge publish --platform=linux",
     "lint": "eslint --ext .ts,.tsx ."
   },
   "keywords": [],
@@ -53,6 +53,7 @@
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vitejs/plugin-react": "^4.6.0",
+    "appdmg": "^0.6.6",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",
     "electron": "37.2.1",
