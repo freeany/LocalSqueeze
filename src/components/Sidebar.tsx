@@ -41,7 +41,7 @@ export default function Sidebar() {
                 transition-all duration-200 relative overflow-hidden
                 ${isActive 
                   ? 'bg-primary text-primary-foreground shadow-md' 
-                  : 'hover:bg-accent hover:text-accent-foreground'}
+                  : 'hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 dark:hover:text-primary-foreground'}
               `}
               onMouseEnter={() => setHoveredItem(item.path)}
               onMouseLeave={() => setHoveredItem(null)}
@@ -66,4 +66,4 @@ export default function Sidebar() {
       </div>
     </div>
   );
-} 
+}

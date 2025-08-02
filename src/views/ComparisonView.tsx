@@ -146,7 +146,7 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
         <div className="flex gap-2">
           <button
             onClick={onRecompress}
-            className="flex items-center gap-1 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-md text-sm"
+            className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 rounded-md text-sm"
           >
             <RefreshCw size={16} />
             重新压缩
@@ -163,27 +163,27 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
       
       {/* 统计信息 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-card p-4 rounded-lg shadow-sm">
-        <div className="flex flex-col items-center p-3 bg-muted/50 rounded-md">
+        <div className="flex flex-col items-center p-3 bg-primary/10 rounded-md">
           <div className="text-2xl font-bold">{formatFileSize(currentResult.originalSize)}</div>
           <div className="text-sm text-muted-foreground">原始大小</div>
         </div>
-        <div className="flex flex-col items-center p-3 bg-muted/50 rounded-md">
+        <div className="flex flex-col items-center p-3 bg-primary/10 rounded-md">
           <div className="text-2xl font-bold">{formatFileSize(currentResult.compressedSize)}</div>
           <div className="text-sm text-muted-foreground">压缩后大小</div>
         </div>
-        <div className="flex flex-col items-center p-3 bg-muted/50 rounded-md">
+        <div className="flex flex-col items-center p-3 bg-primary/10 rounded-md">
           <div className="text-2xl font-bold text-green-600">-{currentResult.compressionRate}</div>
           <div className="text-sm text-muted-foreground">节省空间</div>
         </div>
-        <div className="flex flex-col items-center p-3 bg-muted/50 rounded-md">
+        <div className="flex flex-col items-center p-3 bg-primary/10 rounded-md">
           <div className="text-2xl font-bold">{currentResult.width}×{currentResult.height}</div>
           <div className="text-sm text-muted-foreground">图片尺寸</div>
         </div>
-        <div className="flex flex-col items-center p-3 bg-muted/50 rounded-md">
+        <div className="flex flex-col items-center p-3 bg-primary/10 rounded-md">
           <div className="text-2xl font-bold">{currentResult.outputFormat.toUpperCase()}</div>
           <div className="text-sm text-muted-foreground">文件格式</div>
         </div>
-        <div className="flex flex-col items-center p-3 bg-muted/50 rounded-md">
+        <div className="flex flex-col items-center p-3 bg-primary/10 rounded-md">
           <div className="text-2xl font-bold">{new Date().toLocaleDateString()}</div>
           <div className="text-sm text-muted-foreground">处理日期</div>
         </div>
@@ -196,7 +196,7 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
           className={`px-3 py-1.5 rounded-md text-sm ${
             viewMode === 'side-by-side' 
               ? 'bg-primary text-primary-foreground' 
-              : 'bg-muted hover:bg-muted/80'
+              : 'bg-primary/10 hover:bg-primary/20'
           }`}
         >
           并排对比
@@ -206,7 +206,7 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
           className={`px-3 py-1.5 rounded-md text-sm ${
             viewMode === 'slider' 
               ? 'bg-primary text-primary-foreground' 
-              : 'bg-muted hover:bg-muted/80'
+              : 'bg-primary/10 hover:bg-primary/20'
           }`}
         >
           滑动对比
@@ -221,8 +221,8 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
             disabled={activeIndex === 0}
             className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm ${
               activeIndex === 0 
-                ? 'bg-muted/30 text-muted-foreground cursor-not-allowed' 
-                : 'bg-muted hover:bg-muted/80'
+                ? 'bg-primary/10 text-muted-foreground cursor-not-allowed' 
+                : 'bg-primary/10 hover:bg-primary/20'
             }`}
           >
             <ArrowLeft size={16} />
@@ -236,8 +236,8 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
             disabled={activeIndex === results.length - 1}
             className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm ${
               activeIndex === results.length - 1 
-                ? 'bg-muted/30 text-muted-foreground cursor-not-allowed' 
-                : 'bg-muted hover:bg-muted/80'
+                ? 'bg-primary/10 text-muted-foreground cursor-not-allowed' 
+                : 'bg-primary/10 hover:bg-primary/20'
             }`}
           >
             下一张
@@ -251,7 +251,7 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {/* 原始图片 */}
           <div className="border border-border rounded-lg overflow-hidden">
-            <div className="flex justify-between items-center p-3 bg-muted/30">
+            <div className="flex justify-between items-center p-3 bg-primary/10">
               <div className="font-medium">原始图片</div>
               <div className="text-sm text-muted-foreground">{formatFileSize(currentResult.originalSize)}</div>
             </div>
@@ -266,19 +266,19 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
               <div className="absolute bottom-3 right-3 flex gap-1">
                 <button
                   onClick={() => handleZoom('in')}
-                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-black/80 rounded-md hover:bg-white dark:hover:bg-black/90"
+                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-primary/80 rounded-md hover:bg-white dark:hover:bg-primary/90"
                 >
                   <Plus size={16} />
                 </button>
                 <button
                   onClick={() => handleZoom('out')}
-                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-black/80 rounded-md hover:bg-white dark:hover:bg-black/90"
+                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-primary/80 rounded-md hover:bg-white dark:hover:bg-primary/90"
                 >
                   <Minus size={16} />
                 </button>
                 <button
                   onClick={() => handleZoom('reset')}
-                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-black/80 rounded-md hover:bg-white dark:hover:bg-black/90"
+                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-primary/80 rounded-md hover:bg-white dark:hover:bg-primary/90"
                 >
                   <Maximize size={16} />
                 </button>
@@ -288,7 +288,7 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
           
           {/* 压缩后图片 */}
           <div className="border border-border rounded-lg overflow-hidden">
-            <div className="flex justify-between items-center p-3 bg-muted/30">
+            <div className="flex justify-between items-center p-3 bg-primary/10">
               <div className="font-medium">压缩后图片</div>
               <div className="text-sm text-muted-foreground">{formatFileSize(currentResult.compressedSize)}</div>
             </div>
@@ -303,19 +303,19 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
               <div className="absolute bottom-3 right-3 flex gap-1">
                 <button
                   onClick={() => handleZoom('in')}
-                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-black/80 rounded-md hover:bg-white dark:hover:bg-black/90"
+                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-primary/80 rounded-md hover:bg-white dark:hover:bg-primary/90"
                 >
                   <Plus size={16} />
                 </button>
                 <button
                   onClick={() => handleZoom('out')}
-                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-black/80 rounded-md hover:bg-white dark:hover:bg-black/90"
+                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-primary/80 rounded-md hover:bg-white dark:hover:bg-primary/90"
                 >
                   <Minus size={16} />
                 </button>
                 <button
                   onClick={() => handleZoom('reset')}
-                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-black/80 rounded-md hover:bg-white dark:hover:bg-black/90"
+                  className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-primary/80 rounded-md hover:bg-white dark:hover:bg-primary/90"
                 >
                   <Maximize size={16} />
                 </button>
@@ -326,7 +326,7 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
       ) : (
         // 滑动对比视图
         <div className="border border-border rounded-lg overflow-hidden mb-6">
-          <div className="flex justify-between items-center p-3 bg-muted/30">
+          <div className="flex justify-between items-center p-3 bg-primary/10">
             <div className="font-medium">滑动对比</div>
             <div className="text-sm text-muted-foreground">
               原始: {formatFileSize(currentResult.originalSize)} | 
@@ -378,19 +378,19 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
             <div className="absolute bottom-3 right-3 flex gap-1">
               <button
                 onClick={() => handleZoom('in')}
-                className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-black/80 rounded-md hover:bg-white dark:hover:bg-black/90"
+                className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-primary/80 rounded-md hover:bg-white dark:hover:bg-primary/90"
               >
                 <Plus size={16} />
               </button>
               <button
                 onClick={() => handleZoom('out')}
-                className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-black/80 rounded-md hover:bg-white dark:hover:bg-black/90"
+                className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-primary/80 rounded-md hover:bg-white dark:hover:bg-primary/90"
               >
                 <Minus size={16} />
               </button>
               <button
                 onClick={() => handleZoom('reset')}
-                className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-black/80 rounded-md hover:bg-white dark:hover:bg-black/90"
+                className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-primary/80 rounded-md hover:bg-white dark:hover:bg-primary/90"
               >
                 <Maximize size={16} />
               </button>
@@ -403,7 +403,7 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
       <div className="flex justify-between mt-6">
         <button
           onClick={() => navigate('/settings')}
-          className="px-4 py-2 bg-muted hover:bg-muted/80 rounded-md"
+          className="px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-md"
         >
           返回压缩设置
         </button>
@@ -416,4 +416,4 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
       </div>
     </div>
   );
-} 
+}
