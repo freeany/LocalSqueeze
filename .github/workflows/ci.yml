@@ -2,9 +2,9 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
   workflow_dispatch:
 
 permissions:
@@ -13,11 +13,11 @@ permissions:
   security-events: write
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '22'
 
 jobs:
-  lint:
-    name: Code Quality
+  quality:
+    name: Code Quality & Security
     runs-on: ubuntu-latest
     
     steps:
@@ -43,35 +43,23 @@ jobs:
         run: npx tsc --noEmit
         continue-on-error: true
 
-  security:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci --prefer-offline --no-audit
-
       - name: Run npm audit
         run: npm audit --audit-level=moderate
         continue-on-error: true
 
-      - name: Run CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
         with:
           languages: javascript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
         continue-on-error: true
 
-  build-test:
-    name: Build Test
+
+
+  test-build:
+    name: Test Build
     runs-on: ${{ matrix.os }}
     
     strategy:
@@ -103,7 +91,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
 
-      - name: Test build
+      - name: Test package build
         env:
           NODE_ENV: development
         run: npm run package

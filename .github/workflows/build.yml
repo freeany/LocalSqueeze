@@ -1,11 +1,12 @@
-name: Build and Release
+name: Build and Publish
 
 on:
   push:
+    branches: [main, master]
     tags:
       - 'v*'
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
     inputs:
       release_type:
@@ -17,40 +18,38 @@ on:
           - draft
           - prerelease
           - release
+      dry_run:
+        description: 'Dry run (test without publishing)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
   packages: write
   actions: read
+  security-events: write
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '22'
   ELECTRON_CACHE: ${{ github.workspace }}/.cache/electron
   ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.platform }}
     
     strategy:
       fail-fast: false
       matrix:
+        platform: [macos-latest, windows-latest, ubuntu-latest]
         include:
-          - os: windows-latest
-            platform: win32
-            arch: x64
-          - os: windows-latest
-            platform: win32
-            arch: arm64
-          - os: macos-latest
-            platform: darwin
-            arch: x64
-          - os: macos-latest
-            platform: darwin
-            arch: arm64
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
+          - platform: windows-latest
+            os_name: win32
+          - platform: macos-latest
+            os_name: darwin
+          - platform: ubuntu-latest
+            os_name: linux
     
     steps:
       - name: Check out Git repository
@@ -70,7 +69,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install system dependencies (Linux)
-        if: matrix.platform == 'linux'
+        if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libdrm2-dev libxcomposite-dev libxdamage-dev libxrandr-dev libgbm-dev libxss-dev libasound2-dev
@@ -93,102 +92,99 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
+
+      - name: Install Apple Certificate
+        if: matrix.platform == 'macos-latest'
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+        run: |
+          # create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # import certificate and provisioning profile from secrets
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
         
+      - name: Package application
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_ENV: production
+          APPLE_IDENTITY: ${{ secrets.APPLE_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npm run package
+        
+      - name: Sign Windows Package
+        if: matrix.platform == 'windows-latest'
+        uses: azure/trusted-signing-action@v0.5.0
+        with:
+          files-folder: out
+          files-folder-filter: exe,dll,sys,efi,scr,node,msi,appx,appxbundle,msix,msixbundle,cat,cab,xap,vbs,wsf,ps1
+          files-folder-recurse: true
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
+          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
+
       - name: Build application
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_ENV: production
-        run: npm run make -- --arch=${{ matrix.arch }}
-        
+        run: npm run make
+
+      - name: Publish to GitHub (Dry Run)
+        if: github.event.inputs.dry_run == 'true' || github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: npm run publish -- --dry-run
+
+      - name: Sign Windows Installer
+        if: matrix.platform == 'windows-latest'
+        uses: azure/trusted-signing-action@v0.5.0
+        with:
+          files-folder: out/make
+          files-folder-filter: exe,dll,sys,efi,scr,node,msi,appx,appxbundle,msix,msixbundle,cat,cab,xap,vbs,wsf,ps1
+          files-folder-recurse: true
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
+          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.platform }}-${{ matrix.arch }}
+          name: build-${{ matrix.os_name }}
           path: out/make/
           retention-days: 7
           compression-level: 6
           
-  release:
+  publish:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+    if: github.ref_type == 'tag' && github.event.inputs.dry_run != 'true'
     
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts/
-          pattern: build-*
-          merge-multiple: false
-          
-      - name: Display structure of downloaded files
-        run: ls -la ./artifacts/
-        
-      - name: Organize artifacts
-        run: |
-          mkdir -p ./release-assets
-          find ./artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" \) -exec cp {} ./release-assets/ \;
-          ls -la ./release-assets/
-          
-      - name: Generate changelog
-        id: changelog
-        run: |
-          if [ "${{ github.ref_type }}" == "tag" ]; then
-            # 获取上一个标签
-            PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-            if [ -n "$PREVIOUS_TAG" ]; then
-              echo "## Changes since $PREVIOUS_TAG" > CHANGELOG.md
-              git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD >> CHANGELOG.md
-            else
-              echo "## Initial Release" > CHANGELOG.md
-              git log --pretty=format:"- %s (%h)" >> CHANGELOG.md
-            fi
-          else
-            echo "## Manual Release" > CHANGELOG.md
-            echo "This is a manually triggered release." >> CHANGELOG.md
-          fi
-          
-      - name: Determine release type
-        id: release_type
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "draft=${{ github.event.inputs.release_type == 'draft' }}" >> $GITHUB_OUTPUT
-            echo "prerelease=${{ github.event.inputs.release_type == 'prerelease' }}" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref_name }}" =~ ^v.*-(alpha|beta|rc) ]]; then
-            echo "draft=false" >> $GITHUB_OUTPUT
-            echo "prerelease=true" >> $GITHUB_OUTPUT
-          else
-            echo "draft=true" >> $GITHUB_OUTPUT
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-          fi
-          
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name || format('v{0}', github.run_number) }}
-          name: ${{ github.ref_name || format('Release v{0}', github.run_number) }}
-          body_path: CHANGELOG.md
-          draft: ${{ steps.release_type.outputs.draft }}
-          prerelease: ${{ steps.release_type.outputs.prerelease }}
-          files: |
-            ./release-assets/*
-          fail_on_unmatched_files: false
-          
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref_type == 'tag' && !contains(github.ref_name, '-')
-    
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -199,8 +195,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
         
-      - name: Publish to GitHub Releases
+      - name: Publish to GitHub
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_ENV: production
+          GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: npm run publish
