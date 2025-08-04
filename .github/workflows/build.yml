@@ -145,6 +145,11 @@ jobs:
           generate_release_notes: true
           fail_on_unmatched_files: false
           files: |
-            ./artifacts/win32/**/*
-            ./artifacts/darwin-x64/**/*
-            ./artifacts/darwin-arm64/**/*
+            ./artifacts/win32/squirrel.windows/x64/LocalSqueeze-Setup.exe
+            ./artifacts/win32/squirrel.windows/x64/LocalSqueezeSetup.msi
+            ./artifacts/win32/wix/x64/LocalSqueeze.msi
+            ./artifacts/win32/zip/win32/x64/LocalSqueeze-win32-x64-1.0.9.zip
+            ./artifacts/darwin-x64/LocalSqueeze.dmg
+            ./artifacts/darwin-x64/zip/darwin/arm64/LocalSqueeze-darwin-arm64-1.0.9.zip
+            ./artifacts/darwin-arm64/LocalSqueeze.dmg
+            ./artifacts/darwin-arm64/zip/darwin/arm64/LocalSqueeze-darwin-arm64-1.0.9.zip
