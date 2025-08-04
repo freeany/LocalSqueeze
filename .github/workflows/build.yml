@@ -88,13 +88,50 @@ jobs:
           name: build-darwin-arm64
           path: ./artifacts/darwin-arm64/
           
-      - name: List downloaded artifacts
+      - name: Debug artifacts information
         run: |
-          echo "Listing all downloaded artifacts:"
-          find ./artifacts -type f -name "*" | head -20
-          echo "Directory structure:"
-          ls -la ./artifacts/
-          ls -la ./artifacts/*/
+          echo "=== Detailed Artifacts Debug Information ==="
+          echo "Current working directory: $(pwd)"
+          echo "Available disk space:"
+          df -h .
+          echo ""
+          echo "=== Directory Structure ==="
+          find ./artifacts -type d | sort
+          echo ""
+          echo "=== All Files with Details ==="
+          find ./artifacts -type f -exec ls -lah {} \; | head -30
+          echo ""
+          echo "=== File Count by Type ==="
+          find ./artifacts -type f -name "*.exe" | wc -l | xargs echo "EXE files:"
+          find ./artifacts -type f -name "*.msi" | wc -l | xargs echo "MSI files:"
+          find ./artifacts -type f -name "*.dmg" | wc -l | xargs echo "DMG files:"
+          find ./artifacts -type f -name "*.zip" | wc -l | xargs echo "ZIP files:"
+          find ./artifacts -type f -name "*.app" | wc -l | xargs echo "APP files:"
+          echo ""
+          echo "=== File Paths for Release ==="
+          find ./artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" \) | sort
+          echo ""
+          echo "=== File Checksums ==="
+          find ./artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" \) -exec sha256sum {} \;
+          
+      - name: Pre-release file validation
+        run: |
+          echo "=== Pre-Release Validation ==="
+          echo "GitHub ref: ${{ github.ref }}"
+          echo "GitHub ref name: ${{ github.ref_name }}"
+          echo "GitHub ref type: ${{ github.ref_type }}"
+          echo "Repository: ${{ github.repository }}"
+          echo ""
+          echo "=== Files to be uploaded ==="
+          for pattern in "./artifacts/win32/**/*" "./artifacts/darwin-x64/**/*" "./artifacts/darwin-arm64/**/*"; do
+            echo "Pattern: $pattern"
+            find ./artifacts -path "${pattern#./artifacts/}" -type f 2>/dev/null || echo "No files found for pattern: $pattern"
+          done
+          echo ""
+          echo "=== Final file list ==="
+          find ./artifacts -type f | while read file; do
+            echo "File: $file ($(stat -c%s "$file" 2>/dev/null || stat -f%z "$file") bytes)"
+          done
           
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -106,6 +143,7 @@ jobs:
           draft: true
           prerelease: false
           generate_release_notes: true
+          fail_on_unmatched_files: false
           files: |
             ./artifacts/win32/**/*
             ./artifacts/darwin-x64/**/*
