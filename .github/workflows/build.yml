@@ -34,8 +34,13 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-      - name: Install dependencies
-      
+
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npm ci --no-optional
+        
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
         run: npm ci
         
       - name: Build (Windows)
@@ -90,13 +95,6 @@ jobs:
           name: build-darwin-arm64
           path: ./artifacts/darwin-arm64/
           
-      - name: Debug - List artifacts
-        run: |
-          echo "Listing all artifacts:"
-          find ./artifacts -type f -name "*" | head -20
-          echo "Directory structure:"
-          ls -la ./artifacts/
-          
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         env:
@@ -107,4 +105,5 @@ jobs:
           draft: true
           prerelease: false
           generate_release_notes: true
-          files: ./artifacts/**
+          files: |
+            ./artifacts/**/*
