@@ -37,7 +37,7 @@ const config: ForgeConfig = {
       // 添加codepage配置解决中文编码问题
       // 移除 codepage 配置，因为它不是 MakerSquirrelConfig 的有效属性
     }),
-    // 添加WiX安装程序，支持选择安装路径
+    // WiX安装程序，支持选择安装路径（仅在Windows上运行）
     {
       name: '@electron-forge/maker-wix',
       config: {
@@ -52,7 +52,8 @@ const config: ForgeConfig = {
         programFilesFolderName: "LocalSqueeze",
         // 设置快捷方式文件夹名称
         shortcutFolderName: "LocalSqueeze"
-      }
+      },
+      platforms: ['win32'] // 限制只在Windows平台上运行
     },
     // macOS
     new MakerDMG({
