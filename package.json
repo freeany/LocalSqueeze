@@ -11,6 +11,8 @@
     "make:dev": "electron-forge make",
     "make:win": "cross-env NODE_ENV=production electron-forge make --platform=win32",
     "make:mac": "cross-env NODE_ENV=production electron-forge make --platform=darwin",
+    "make:mac:intel": "cross-env NODE_ENV=production npm_config_target_arch=x64 electron-forge make --platform=darwin --arch=x64",
+    "make:mac:arm64": "cross-env NODE_ENV=production npm_config_target_arch=arm64 electron-forge make --platform=darwin --arch=arm64",
     "make:all": "cross-env NODE_ENV=production electron-forge make --platform=win32 && cross-env NODE_ENV=production electron-forge make --platform=darwin && cross-env NODE_ENV=production electron-forge make --platform=linux",
     "publish": "cross-env NODE_ENV=production electron-forge publish",
     "publish:local": "env-cmd cross-env NODE_ENV=production electron-forge publish",
