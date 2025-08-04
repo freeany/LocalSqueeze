@@ -83,16 +83,31 @@ const config: ForgeConfig = {
         owner: 'freeany',
         name: 'LocalSqueeze'
       },
-      prerelease: false,
-      draft: true, // 设置为true，发布到草稿箱，需要手动确认发布
+      prerelease: process.env.NODE_ENV !== 'production',
+      draft: true, // 始终发布为草稿，需要手动确认
       authToken: process.env.GITHUB_TOKEN,
-      tagPrefix: 'v', // 版本标签前缀
-      generateReleaseNotes: true, // 自动生成发布说明
+      tagPrefix: 'v',
+      generateReleaseNotes: true,
+      // 改进的发布配置
       octokitOptions: {
         retry: {
-          doNotRetry: ['HttpError']
+          doNotRetry: ['HttpError'],
+          retries: 3
+        },
+        throttle: {
+          onRateLimit: (retryAfter: number, options: any) => {
+            console.warn(`Request quota exhausted for request ${options.method} ${options.url}`);
+            if (options.request.retryCount === 0) {
+              console.log(`Retrying after ${retryAfter} seconds!`);
+              return true;
+            }
+          },
+          onSecondaryRateLimit: (retryAfter: number, options: any) => {
+            console.warn(`Secondary rate limit hit for request ${options.method} ${options.url}`);
+            return true;
+          }
         }
-      }
+      },
     })
   ],
   plugins: [

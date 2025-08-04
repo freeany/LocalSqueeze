@@ -34,4 +34,61 @@ release
 /docs
 /prototype
 
+# Environment variables
 .env
+.env.local
+.env.*.local
+.env.example
+
+# Build and release artifacts
+*.tgz
+*.tar.gz
+
+# Electron specific
+.electron-gyp
+.electron-rebuild
+
+# Cache directories
+.cache/
+.npm/
+.yarn/
+.pnpm-store/
+node_modules/.cache/
+
+# OS specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.Spotlight-V100
+.Trashes
+
+# Code signing
+*.p12
+*.cer
+*.crt
+*.key
+*.pem
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# IDE specific
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.code-workspace
+
+# Testing
+coverage/
+.nyc_output/
+
+# Miscellaneous
+*.pid
+*.seed
+*.pid.lock
+.lock-wscript
