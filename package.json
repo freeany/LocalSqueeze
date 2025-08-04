@@ -67,7 +67,6 @@
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vitejs/plugin-react": "^4.6.0",
-    "appdmg": "^0.6.6",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",
     "electron": "37.2.1",
@@ -78,6 +77,9 @@
     "ts-node": "^10.9.2",
     "typescript": "~4.5.4",
     "vite": "^5.4.19"
+  },
+  "optionalDependencies": {
+    "appdmg": "^0.6.6"
   },
   "dependencies": {
     "@electron-forge/maker-dmg": "^7.8.2",
