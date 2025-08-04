@@ -20,6 +20,10 @@ jobs:
             platform: win32
           - os: macos-latest
             platform: darwin
+            arch: x64
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
     
     steps:
       - name: Check out Git repository
@@ -31,7 +35,12 @@ jobs:
           node-version: 18
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npm ci --no-optional
+        
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
         run: npm ci
         
       - name: Build (Windows)
@@ -40,17 +49,26 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run make
         
-      - name: Build (macOS)
-        if: matrix.os == 'macos-latest'
+      - name: Build (macOS Intel)
+        if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # 不进行macOS应用签名和公证
+          npm_config_target_arch: x64
+        run: npm run make
+        
+      - name: Build (macOS Apple Silicon)
+        if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 不进行macOS应用签名和公证
+          npm_config_target_arch: arm64
         run: npm run make
         
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.platform }}
+          name: build-${{ matrix.platform }}${{ matrix.arch && format('-{0}', matrix.arch) || '' }}
           path: out/make/
           
   release:
@@ -65,11 +83,17 @@ jobs:
           name: build-win32
           path: ./artifacts/win32/
           
-      - name: Download macOS Artifacts
+      - name: Download macOS Intel Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-darwin
-          path: ./artifacts/darwin/
+          name: build-darwin-x64
+          path: ./artifacts/darwin-x64/
+          
+      - name: Download macOS Apple Silicon Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-darwin-arm64
+          path: ./artifacts/darwin-arm64/
           
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
