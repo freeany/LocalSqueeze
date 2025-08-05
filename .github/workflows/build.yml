@@ -49,15 +49,13 @@ jobs:
         if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          npm_config_target_arch: x64
-        run: npm run make -- --arch=x64
+        run: npm run make:mac:intel
         
       - name: Build (macOS Apple Silicon)
         if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          npm_config_target_arch: arm64
-        run: npm run make -- --arch=arm64
+        run: npm run make:mac:arm64
         
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
