@@ -1,51 +1,24 @@
-name: Build and Publish
+name: Build and Release
 
 on:
   push:
-    branches: [main, master]
     tags:
       - 'v*'
-  pull_request:
-    branches: [main, master]
-  workflow_dispatch:
-    inputs:
-      release_type:
-        description: 'Release type'
-        required: true
-        default: 'draft'
-        type: choice
-        options:
-          - draft
-          - prerelease
-          - release
-      dry_run:
-        description: 'Dry run (test without publishing)'
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: write
   packages: write
-  actions: read
-  security-events: write
-
-env:
-  NODE_VERSION: '22'
-  ELECTRON_CACHE: ${{ github.workspace }}/.cache/electron
-  ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
 
 jobs:
   build:
-    runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
     
     strategy:
-      fail-fast: false
       matrix:
-        platform: [macos-latest, windows-latest, ubuntu-latest]
         include:
           - os: windows-latest
             platform: win32
+            arch: x64
           - os: macos-latest
             platform: darwin
             arch: x64
@@ -56,133 +29,60 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: 18
           cache: 'npm'
 
-      - name: Setup Python (for native modules)
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install system dependencies (Linux)
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libdrm2-dev libxcomposite-dev libxdamage-dev libxrandr-dev libgbm-dev libxss-dev libasound2-dev
-
-      - name: Cache Electron
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.ELECTRON_CACHE }}
-          key: ${{ runner.os }}-electron-cache-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-electron-cache-
-
-      - name: Cache Electron Builder
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.ELECTRON_BUILDER_CACHE }}
-          key: ${{ runner.os }}-electron-builder-cache-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-electron-builder-cache-
-
       - name: Install dependencies
-        run: npm ci --prefer-offline --no-audit
-
-      - name: Install Apple Certificate
-        if: matrix.platform == 'macos-latest'
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_BUILD_CERTIFICATE_BASE64 }}
-          P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
-        run: |
-          # create variables
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-          # import certificate and provisioning profile from secrets
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
-
-          # create temporary keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          # import certificate to keychain
-          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
+        run: npm ci
         
-      - name: Package application
+      - name: Build (Windows)
+        if: matrix.platform == 'win32'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_ENV: production
-          APPLE_IDENTITY: ${{ secrets.APPLE_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: npm run package
+        run: npm run make
         
       - name: Build (macOS Intel)
         if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 不进行macOS应用签名和公证
           npm_config_target_arch: x64
-        run: npm run make
+        run: npm run make -- --arch=x64
         
       - name: Build (macOS Apple Silicon)
         if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 不进行macOS应用签名和公证
           npm_config_target_arch: arm64
-        run: npm run make
-
-      - name: Publish to GitHub (Dry Run)
-        if: github.event.inputs.dry_run == 'true' || github.event_name == 'pull_request'
-        env:
-          GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-        run: npm run publish -- --dry-run
-
-      - name: Sign Windows Installer
-        if: matrix.platform == 'windows-latest'
-        uses: azure/trusted-signing-action@v0.5.0
-        with:
-          files-folder: out/make
-          files-folder-filter: exe,dll,sys,efi,scr,node,msi,appx,appxbundle,msix,msixbundle,cat,cab,xap,vbs,wsf,ps1
-          files-folder-recurse: true
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-          endpoint: ${{ secrets.AZURE_ENDPOINT }}
-          trusted-signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
-          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
-
+        run: npm run make -- --arch=arm64
+        
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.platform }}${{ matrix.arch && format('-{0}', matrix.arch) || '' }}
+          name: build-${{ matrix.platform }}-${{ matrix.arch }}
           path: out/make/
-          retention-days: 7
-          compression-level: 6
           
-  publish:
+  release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref_type == 'tag' && github.event.inputs.dry_run != 'true'
+    if: github.ref_type == 'tag'
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+      id-token: write
     
     steps:
-      - name: Check out Git repository
+      - name: Checkout code
         uses: actions/checkout@v4
+        
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: build-win32
+          name: build-win32-x64
           path: ./artifacts/win32/
           
       - name: Download macOS Intel Artifacts
@@ -197,8 +97,227 @@ jobs:
           name: build-darwin-arm64
           path: ./artifacts/darwin-arm64/
           
+      - name: Debug artifacts information
+        run: |
+          echo "=== Detailed Artifacts Debug Information ==="
+          echo "Current working directory: $(pwd)"
+          echo "Available disk space:"
+          df -h .
+          echo ""
+          echo "=== Directory Structure ==="
+          find ./artifacts -type d | sort
+          echo ""
+          echo "=== All Files with Details ==="
+          find ./artifacts -type f -exec ls -lah {} \; | head -30
+          echo ""
+          echo "=== File Count by Type ==="
+          find ./artifacts -type f -name "*.exe" | wc -l | xargs echo "EXE files:"
+          find ./artifacts -type f -name "*.msi" | wc -l | xargs echo "MSI files:"
+          find ./artifacts -type f -name "*.dmg" | wc -l | xargs echo "DMG files:"
+          find ./artifacts -type f -name "*.zip" | wc -l | xargs echo "ZIP files:"
+          find ./artifacts -type f -name "*.app" | wc -l | xargs echo "APP files:"
+          echo ""
+          echo "=== File Paths for Release ==="
+          find ./artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" \) | sort
+          echo ""
+          echo "=== File Checksums ==="
+          find ./artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" \) -exec sha256sum {} \;
+          
+      - name: Pre-release file validation
+        run: |
+          echo "=== Pre-Release Validation ==="
+          echo "GitHub ref: ${{ github.ref }}"
+          echo "GitHub ref name: ${{ github.ref_name }}"
+          echo "GitHub ref type: ${{ github.ref_type }}"
+          echo "Repository: ${{ github.repository }}"
+          echo ""
+          echo "=== Files to be uploaded ==="
+          echo "Windows files:"
+          find ./artifacts/win32 -type f 2>/dev/null || echo "No Windows files found"
+          echo "macOS Intel files:"
+          find ./artifacts/darwin-x64 -type f 2>/dev/null || echo "No macOS Intel files found"
+          echo "macOS Apple Silicon files:"
+          find ./artifacts/darwin-arm64 -type f 2>/dev/null || echo "No macOS Apple Silicon files found"
+          echo ""
+          echo "=== Final file list ==="
+          find ./artifacts -type f | while read file; do
+            echo "File: $file ($(stat -c%s "$file" 2>/dev/null || stat -f%z "$file") bytes)"
+          done
+          
+      - name: Verify Release Files
+        run: |
+          echo "=== Verifying Release Files ==="
+          
+          # Define expected files based on Electron Forge output structure
+          EXPECTED_FILES=(
+            "./artifacts/win32/squirrel.windows/x64/LocalSqueeze-Setup.exe"
+            "./artifacts/win32/wix/x64/LocalSqueeze.msi"
+            "./artifacts/win32/zip/win32/x64/LocalSqueeze-win32-x64-${{ github.ref_name }}.zip"
+          )
+          
+          # Also check for alternative paths
+          ALTERNATIVE_FILES=(
+            "./artifacts/win32/LocalSqueeze-Setup.exe"
+            "./artifacts/win32/LocalSqueeze.msi"
+            "./artifacts/win32/LocalSqueeze-win32-x64-${{ github.ref_name }}.zip"
+          )
+          
+          # Check Windows files
+          echo "Checking expected file paths:"
+          for file in "${EXPECTED_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✓ Found: $file"
+              ls -lah "$file"
+            else
+              echo "✗ Missing: $file"
+            fi
+          done
+          
+          echo ""
+          echo "Checking alternative file paths:"
+          for file in "${ALTERNATIVE_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✓ Found alternative: $file"
+              ls -lah "$file"
+            else
+              echo "✗ Missing alternative: $file"
+            fi
+          done
+          
+          # Check macOS files
+          echo ""
+          echo "=== macOS Files ==="
+          find ./artifacts -name "*.dmg" -o -name "*darwin*.zip" | while read file; do
+            echo "✓ Found: $file"
+            ls -lah "$file"
+          done
+          
+          # List all files that will be uploaded
+          echo ""
+          echo "=== Files to be uploaded ==="
+          echo "All release files found:"
+          find ./artifacts -type f \( -name "*Setup*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) | sort
+          
+          # Verify at least some files exist
+          FILE_COUNT=$(find ./artifacts -type f \( -name "*Setup*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) | wc -l)
+          echo "Total release files found: $FILE_COUNT"
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "⚠️  WARNING: No release files found!"
+            exit 1
+          fi
+          
+      - name: Final Release Files Check
+        run: |
+          echo "=== Final Release Files Check ==="
+          echo "Checking exact files that will be uploaded:"
+          
+          # Check each file pattern individually
+          echo "Windows Setup files:"
+          find ./artifacts/win32 -name "*Setup*.exe" -type f 2>/dev/null || echo "No Setup.exe files found"
+          
+          echo "Windows MSI files:"
+          find ./artifacts/win32 -name "*.msi" -type f 2>/dev/null || echo "No MSI files found"
+          
+          echo "Windows ZIP files:"
+          find ./artifacts/win32 -name "*.zip" -type f 2>/dev/null || echo "No Windows ZIP files found"
+          
+          echo "macOS Intel DMG files:"
+          find ./artifacts/darwin-x64 -name "*.dmg" -type f 2>/dev/null || echo "No Intel DMG files found"
+          
+          echo "macOS Intel ZIP files:"
+          find ./artifacts/darwin-x64 -name "*.zip" -type f 2>/dev/null || echo "No Intel ZIP files found"
+          
+          echo "macOS Apple Silicon DMG files:"
+          find ./artifacts/darwin-arm64 -name "*.dmg" -type f 2>/dev/null || echo "No Apple Silicon DMG files found"
+          
+          echo "macOS Apple Silicon ZIP files:"
+          find ./artifacts/darwin-arm64 -name "*.zip" -type f 2>/dev/null || echo "No Apple Silicon ZIP files found"
+          
+          # Test file accessibility
+          echo "\nTesting file accessibility:"
+          find ./artifacts -type f \( -name "*Setup*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) | while read file; do
+            if [ -r "$file" ]; then
+              echo "✓ Readable: $file ($(stat -c%s "$file" 2>/dev/null || stat -f%z "$file") bytes)"
+            else
+              echo "✗ Not readable: $file"
+            fi
+          done
+          
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-        run: npm run publish
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e  # 遇到错误立即退出
+          
+          echo "=== GitHub CLI Version ==="
+          gh --version
+          
+          echo "=== GitHub Authentication Check ==="
+          gh auth status
+          
+          echo "=== Repository Information ==="
+          echo "Repository: ${{ github.repository }}"
+          echo "Tag: ${{ github.ref_name }}"
+          
+          # 检查release是否已存在
+          echo "=== Checking if release already exists ==="
+          if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
+            echo "Release ${{ github.ref_name }} already exists, deleting it first..."
+            gh release delete "${{ github.ref_name }}" --yes --cleanup-tag || true
+            echo "Existing release and tag deleted"
+            sleep 2  # 等待GitHub API同步
+          fi
+          
+          # 收集所有发布文件
+          echo "=== Collecting release files ==="
+          find ./artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) > /tmp/files.txt
+          
+          if [ ! -s /tmp/files.txt ]; then
+            echo "❌ No release files found!"
+            exit 1
+          fi
+          
+          echo "✅ Found release files:"
+          cat /tmp/files.txt
+          
+          # 验证文件是否可读
+          echo "=== Validating file accessibility ==="
+          if [ ! -s /tmp/files.txt ]; then
+            echo "❌ No release files found!"
+            exit 1
+          fi
+          
+          while IFS= read -r file; do
+            if [ -f "$file" ] && [ -r "$file" ]; then
+              file_size=$(stat -c%s "$file" 2>/dev/null || echo "unknown")
+              echo "✅ $file ($file_size bytes)"
+            else
+              echo "❌ Cannot access: $file"
+              exit 1
+            fi
+          done < /tmp/files.txt
+          
+          # 创建GitHub Release
+          echo "=== Creating GitHub Release ==="
+          echo "Files to upload:"
+          cat /tmp/files.txt
+          
+          # 创建release，使用--clobber参数处理重复文件
+          echo "Creating release with files:"
+          cat /tmp/files.txt
+          
+          # 先创建release（不上传文件）
+          gh release create "${{ github.ref_name }}" \
+            --draft \
+            --generate-notes \
+            --title "Release ${{ github.ref_name }}" \
+            --notes "Automated release for version ${{ github.ref_name }}"
+          
+          # 然后逐个上传文件，使用--clobber参数
+          echo "Uploading files to release..."
+          while IFS= read -r file; do
+            echo "Uploading: $file"
+            gh release upload "${{ github.ref_name }}" "$file" --clobber
+          done < /tmp/files.txt
+          
+          echo "✅ Release created successfully!"

@@ -53,7 +53,8 @@ const config: ForgeConfig = {
         programFilesFolderName: "LocalSqueeze",
         // 设置快捷方式文件夹名称
         shortcutFolderName: "LocalSqueeze"
-      }
+      },
+      platforms: ['win32'] // 限制只在Windows平台上运行
     },
     // macOS
     new MakerDMG({
