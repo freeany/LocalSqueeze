@@ -46,48 +46,137 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           # 确保有Xcode命令行工具
-          xcode-select --install 2>/dev/null || true
-          # 安装node-gyp
+          sudo xcode-select --install 2>/dev/null || echo "Xcode tools already installed"
+          # 安装node-gyp全局
           npm install -g node-gyp
+          # 验证工具安装
+          python3 --version
+          node-gyp --version
 
       - name: Install dependencies
         run: npm ci
         
-      - name: Rebuild native modules (macOS)
+      - name: Setup native modules (macOS)
         if: matrix.os == 'macos-latest'
         env:
           npm_config_target_arch: ${{ matrix.arch }}
+          npm_config_disturl: https://electronjs.org/headers
+          npm_config_runtime: electron
+          npm_config_build_from_source: true
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
         run: |
-          # 重新编译sharp模块以确保与目标架构兼容
-          npm rebuild sharp --arch=${{ matrix.arch }}
+          echo "=== Setting up native modules for ${{ matrix.arch }} ==="
+          
+          # 清理npm缓存
+          echo "Cleaning npm cache..."
+          npm cache clean --force
+          
+          # 删除可能存在问题的原生模块
+          echo "Removing existing native modules..."
+          rm -rf node_modules/sharp node_modules/@electron/rebuild
+          
+          # 重新安装sharp模块，强制从源码编译
+          echo "Installing sharp for ${{ matrix.arch }}..."
+          npm install sharp --build-from-source --target_arch=${{ matrix.arch }} --verbose
+          
+          # 运行electron-rebuild确保所有原生模块正确编译
+          echo "Running electron-rebuild..."
+          npx electron-rebuild --arch=${{ matrix.arch }} --force
+          
+          # 验证sharp安装
+          echo "Verifying sharp installation..."
+          node -e "try { const sharp = require('sharp'); console.log('✅ Sharp loaded successfully:', sharp.versions); } catch(e) { console.error('❌ Sharp failed to load:', e.message); process.exit(1); }"
+          
+          echo "=== Native modules setup completed ==="
+        
+      - name: Pre-build verification
+        run: |
+          echo "=== Pre-build verification ==="
+          echo "Node.js version: $(node --version)"
+          echo "npm version: $(npm --version)"
+          echo "Platform: ${{ matrix.platform }}"
+          echo "Architecture: ${{ matrix.arch }}"
+          
+          # 验证关键依赖
+          echo "Checking critical dependencies..."
+          node -e "console.log('Electron version:', require('electron/package.json').version)" || echo "Electron not found"
+          node -e "console.log('Sharp available:', !!require('sharp'))" || echo "Sharp not available"
+          
+          # 检查构建脚本
+          echo "Available npm scripts:"
+          npm run | grep -E "(make|build)" || echo "No make/build scripts found"
+          
+          echo "=== Pre-build verification completed ==="
         
       - name: Build (Windows)
         if: matrix.platform == 'win32'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run make
+        run: |
+          echo "=== Building for Windows ==="
+          npm run make
+          echo "=== Windows build completed ==="
         
       - name: Build (macOS Intel)
         if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_target_arch: x64
-          npm_config_disturl: https://electronjs.org/headers
-          npm_config_runtime: electron
-          npm_config_cache: /tmp/.npm
-          npm_config_build_from_source: true
-        run: npm run make:mac:intel
+        run: |
+          echo "=== Building for macOS Intel (x64) ==="
+          npm run make:mac:intel
+          echo "=== macOS Intel build completed ==="
+          
+          # 验证构建产物
+          echo "Checking build artifacts..."
+          find out/make -name "*.dmg" -o -name "*.zip" | head -5
         
       - name: Build (macOS Apple Silicon)
         if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_target_arch: arm64
-          npm_config_disturl: https://electronjs.org/headers
-          npm_config_runtime: electron
-          npm_config_cache: /tmp/.npm
-          npm_config_build_from_source: true
-        run: npm run make:mac:arm64
+        run: |
+          echo "=== Building for macOS Apple Silicon (arm64) ==="
+          npm run make:mac:arm64
+          echo "=== macOS Apple Silicon build completed ==="
+          
+          # 验证构建产物
+          echo "Checking build artifacts..."
+          find out/make -name "*.dmg" -o -name "*.zip" | head -5
+        
+      - name: Debug on failure
+        if: failure()
+        run: |
+          echo "=== Build failed, collecting debug information ==="
+          echo "Current directory: $(pwd)"
+          echo "Available disk space:"
+          df -h
+          echo ""
+          echo "Node.js and npm versions:"
+          node --version
+          npm --version
+          echo ""
+          echo "Environment variables:"
+          env | grep -E "(npm_config|NODE|ELECTRON)" | sort
+          echo ""
+          echo "Package.json scripts:"
+          cat package.json | jq '.scripts' 2>/dev/null || echo "Could not parse package.json"
+          echo ""
+          echo "Sharp module status:"
+          node -e "try { const sharp = require('sharp'); console.log('Sharp versions:', sharp.versions); } catch(e) { console.error('Sharp error:', e.message); }"
+          echo ""
+          echo "Directory structure:"
+          ls -la
+          echo ""
+          echo "Out directory (if exists):"
+          ls -la out/ 2>/dev/null || echo "No out directory found"
+          echo ""
+          echo "Node modules sharp:"
+          ls -la node_modules/sharp/ 2>/dev/null || echo "No sharp module found"
+          echo ""
+          echo "Recent npm logs:"
+          tail -50 ~/.npm/_logs/*.log 2>/dev/null || echo "No npm logs found"
         
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4

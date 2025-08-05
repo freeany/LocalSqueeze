@@ -57,10 +57,13 @@ const config: ForgeConfig = {
       platforms: ['win32'] // 限制只在Windows平台上运行
     },
     // macOS
-    new MakerDMG({
-      name: 'LocalSqueeze',
-      icon: './src/assets/icons/icon.icns',
-      format: 'ULFO'
+    new MakerDMG((arch: string) => {
+      const archSuffix = arch === 'arm64' ? '-apple-silicon' : '-intel';
+      return {
+        name: `LocalSqueeze${archSuffix}`,
+        icon: './src/assets/icons/icon.icns',
+        format: 'ULFO'
+      };
     }, ['darwin']),
     new MakerZIP({}, ['darwin']),
     // Linux
