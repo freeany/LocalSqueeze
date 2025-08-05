@@ -261,9 +261,11 @@ jobs:
           
           # 检查release是否已存在
           echo "=== Checking if release already exists ==="
-          if gh release view ${{ github.ref_name }} >/dev/null 2>&1; then
+          if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
             echo "Release ${{ github.ref_name }} already exists, deleting it first..."
-            gh release delete ${{ github.ref_name }} --yes || true
+            gh release delete "${{ github.ref_name }}" --yes --cleanup-tag || true
+            echo "Existing release and tag deleted"
+            sleep 2  # 等待GitHub API同步
           fi
           
           # 收集所有发布文件
@@ -300,11 +302,22 @@ jobs:
           echo "Files to upload:"
           cat /tmp/files.txt
           
-          # 使用xargs来正确处理文件路径
+          # 创建release，使用--clobber参数处理重复文件
+          echo "Creating release with files:"
+          cat /tmp/files.txt
+          
+          # 先创建release（不上传文件）
           gh release create "${{ github.ref_name }}" \
             --draft \
             --generate-notes \
             --title "Release ${{ github.ref_name }}" \
-            $(cat /tmp/files.txt | xargs)
+            --notes "Automated release for version ${{ github.ref_name }}"
+          
+          # 然后逐个上传文件，使用--clobber参数
+          echo "Uploading files to release..."
+          while IFS= read -r file; do
+            echo "Uploading: $file"
+            gh release upload "${{ github.ref_name }}" "$file" --clobber
+          done < /tmp/files.txt
           
           echo "✅ Release created successfully!"
