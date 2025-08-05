@@ -239,7 +239,9 @@ jobs:
           done
           
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
@@ -247,7 +249,6 @@ jobs:
           prerelease: false
           generate_release_notes: true
           fail_on_unmatched_files: false
-          token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             ./artifacts/win32/**/*Setup*.exe
             ./artifacts/win32/**/*.msi
