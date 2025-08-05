@@ -16,6 +16,7 @@ const config: ForgeConfig = {
     },
     icon: './src/assets/icons/icon' // 不需要扩展名，Electron Forge会根据平台自动选择
     // 不进行macOS应用签名和公证
+    // 架构通过命令行参数 --arch 或环境变量 npm_config_target_arch 指定
   },
   rebuildConfig: {},
   makers: [

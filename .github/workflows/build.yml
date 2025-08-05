@@ -44,12 +44,14 @@ jobs:
       matrix:
         platform: [macos-latest, windows-latest, ubuntu-latest]
         include:
-          - platform: windows-latest
-            os_name: win32
-          - platform: macos-latest
-            os_name: darwin
-          - platform: ubuntu-latest
-            os_name: linux
+          - os: windows-latest
+            platform: win32
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
     
     steps:
       - name: Check out Git repository
@@ -127,24 +129,20 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: npm run package
         
-      - name: Sign Windows Package
-        if: matrix.platform == 'windows-latest'
-        uses: azure/trusted-signing-action@v0.5.0
-        with:
-          files-folder: out
-          files-folder-filter: exe,dll,sys,efi,scr,node,msi,appx,appxbundle,msix,msixbundle,cat,cab,xap,vbs,wsf,ps1
-          files-folder-recurse: true
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-          endpoint: ${{ secrets.AZURE_ENDPOINT }}
-          trusted-signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
-          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
-
-      - name: Build application
+      - name: Build (macOS Intel)
+        if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_ENV: production
+          # 不进行macOS应用签名和公证
+          npm_config_target_arch: x64
+        run: npm run make
+        
+      - name: Build (macOS Apple Silicon)
+        if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 不进行macOS应用签名和公证
+          npm_config_target_arch: arm64
         run: npm run make
 
       - name: Publish to GitHub (Dry Run)
@@ -170,7 +168,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.os_name }}
+          name: build-${{ matrix.platform }}${{ matrix.arch && format('-{0}', matrix.arch) || '' }}
           path: out/make/
           retention-days: 7
           compression-level: 6
@@ -184,18 +182,23 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+          name: build-win32
+          path: ./artifacts/win32/
+          
+      - name: Download macOS Intel Artifacts
+        uses: actions/download-artifact@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci --prefer-offline --no-audit
-        
-      - name: Publish to GitHub
+          name: build-darwin-x64
+          path: ./artifacts/darwin-x64/
+          
+      - name: Download macOS Apple Silicon Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-darwin-arm64
+          path: ./artifacts/darwin-arm64/
+          
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: npm run publish
