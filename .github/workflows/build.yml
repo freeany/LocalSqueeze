@@ -49,14 +49,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_target_arch: x64
-        run: npm run make
+        run: npm run make -- --arch=x64
         
       - name: Build (macOS Apple Silicon)
         if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_target_arch: arm64
-        run: npm run make
+        run: npm run make -- --arch=arm64
         
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -145,11 +145,11 @@ jobs:
           generate_release_notes: true
           fail_on_unmatched_files: false
           files: |
-            ./artifacts/win32/squirrel.windows/x64/LocalSqueeze-Setup.exe
-            ./artifacts/win32/squirrel.windows/x64/LocalSqueezeSetup.msi
-            ./artifacts/win32/wix/x64/LocalSqueeze.msi
-            ./artifacts/win32/zip/win32/x64/LocalSqueeze-win32-x64-${{ github.ref_name }}.zip
-            ./artifacts/darwin-x64/LocalSqueeze.dmg
-            ./artifacts/darwin-x64/zip/darwin/x64/LocalSqueeze-darwin-x64-${{ github.ref_name }}.zip
-            ./artifacts/darwin-arm64/LocalSqueeze.dmg
-            ./artifacts/darwin-arm64/zip/darwin/arm64/LocalSqueeze-darwin-arm64-${{ github.ref_name }}.zip
+            ./artifacts/win32/**/*Setup*.exe
+            ./artifacts/win32/**/*Setup*.msi
+            ./artifacts/win32/**/*.msi
+            ./artifacts/win32/**/*.zip
+            ./artifacts/darwin-x64/**/*.dmg
+            ./artifacts/darwin-x64/**/*.zip
+            ./artifacts/darwin-arm64/**/*.dmg
+            ./artifacts/darwin-arm64/**/*.zip
