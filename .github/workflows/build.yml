@@ -19,12 +19,6 @@ jobs:
           - os: windows-latest
             platform: win32
             arch: x64
-          - os: macos-latest
-            platform: darwin
-            arch: x64
-          - os: macos-latest
-            platform: darwin
-            arch: arm64
     
     steps:
       - name: Check out Git repository
@@ -36,88 +30,8 @@ jobs:
           node-version: 18
           cache: 'npm'
 
-      - name: Setup Python (macOS)
-        if: matrix.os == 'macos-latest'
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install build tools (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          # 确保有Xcode命令行工具
-          sudo xcode-select --install 2>/dev/null || echo "Xcode tools already installed"
-          # 安装node-gyp全局
-          npm install -g node-gyp
-          # 验证工具安装
-          python3 --version
-          node-gyp --version
-
       - name: Install dependencies
         run: npm ci
-        
-      - name: Setup native modules (macOS)
-        if: matrix.os == 'macos-latest'
-        env:
-          npm_config_target_arch: ${{ matrix.arch }}
-          npm_config_disturl: https://electronjs.org/headers
-          npm_config_runtime: electron
-          npm_config_build_from_source: true
-          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-        run: |
-          echo "=== Setting up native modules for ${{ matrix.arch }} ==="
-          
-          # 清理npm缓存
-          echo "Cleaning npm cache..."
-          npm cache clean --force
-          
-          # 删除可能存在问题的原生模块
-          echo "Removing existing native modules..."
-          rm -rf node_modules/sharp node_modules/@electron/rebuild
-          
-          # 重新安装sharp模块，强制从源码编译
-          echo "Installing sharp for ${{ matrix.arch }}..."
-          npm install sharp --build-from-source --target_arch=${{ matrix.arch }} --verbose
-          
-          # 运行electron-rebuild确保所有原生模块正确编译
-          echo "Running electron-rebuild..."
-          # 确保所有二进制文件有执行权限
-          chmod +x node_modules/.bin/* 2>/dev/null || true
-          # 特别确保electron-rebuild有执行权限
-          if [ -f "node_modules/.bin/electron-rebuild" ]; then
-            chmod +x node_modules/.bin/electron-rebuild
-            echo "electron-rebuild permissions set"
-          else
-            echo "electron-rebuild binary not found, installing..."
-            npm install @electron/rebuild --save-dev
-            chmod +x node_modules/.bin/electron-rebuild 2>/dev/null || true
-          fi
-          npx electron-rebuild --arch=${{ matrix.arch }} --force
-          
-          # 验证sharp安装
-          echo "Verifying sharp installation..."
-          node -e "try { const sharp = require('sharp'); console.log('✅ Sharp loaded successfully:', sharp.versions); } catch(e) { console.error('❌ Sharp failed to load:', e.message); process.exit(1); }"
-          
-          echo "=== Native modules setup completed ==="
-        
-      - name: Pre-build verification
-        run: |
-          echo "=== Pre-build verification ==="
-          echo "Node.js version: $(node --version)"
-          echo "npm version: $(npm --version)"
-          echo "Platform: ${{ matrix.platform }}"
-          echo "Architecture: ${{ matrix.arch }}"
-          
-          # 验证关键依赖
-          echo "Checking critical dependencies..."
-          node -e "console.log('Electron version:', require('electron/package.json').version)" || echo "Electron not found"
-          node -e "console.log('Sharp available:', !!require('sharp'))" || echo "Sharp not available"
-          
-          # 检查构建脚本
-          echo "Available npm scripts:"
-          npm run | grep -E "(make|build)" || echo "No make/build scripts found"
-          
-          echo "=== Pre-build verification completed ==="
         
       - name: Build (Windows)
         if: matrix.platform == 'win32'
@@ -128,71 +42,10 @@ jobs:
           npm run make
           echo "=== Windows build completed ==="
         
-      - name: Build (macOS Intel)
-        if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          npm_config_target_arch: x64
-        run: |
-          echo "=== Building for macOS Intel (x64) ==="
-          npm run make:mac:intel
-          echo "=== macOS Intel build completed ==="
-          
-          # 验证构建产物
-          echo "Checking build artifacts..."
-          find out/make -name "*.dmg" -o -name "*.zip" | head -5
-        
-      - name: Build (macOS Apple Silicon)
-        if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          npm_config_target_arch: arm64
-        run: |
-          echo "=== Building for macOS Apple Silicon (arm64) ==="
-          npm run make:mac:arm64
-          echo "=== macOS Apple Silicon build completed ==="
-          
-          # 验证构建产物
-          echo "Checking build artifacts..."
-          find out/make -name "*.dmg" -o -name "*.zip" | head -5
-        
-      - name: Debug on failure
-        if: failure()
-        run: |
-          echo "=== Build failed, collecting debug information ==="
-          echo "Current directory: $(pwd)"
-          echo "Available disk space:"
-          df -h
-          echo ""
-          echo "Node.js and npm versions:"
-          node --version
-          npm --version
-          echo ""
-          echo "Environment variables:"
-          env | grep -E "(npm_config|NODE|ELECTRON)" | sort
-          echo ""
-          echo "Package.json scripts:"
-          cat package.json | jq '.scripts' 2>/dev/null || echo "Could not parse package.json"
-          echo ""
-          echo "Sharp module status:"
-          node -e "try { const sharp = require('sharp'); console.log('Sharp versions:', sharp.versions); } catch(e) { console.error('Sharp error:', e.message); }"
-          echo ""
-          echo "Directory structure:"
-          ls -la
-          echo ""
-          echo "Out directory (if exists):"
-          ls -la out/ 2>/dev/null || echo "No out directory found"
-          echo ""
-          echo "Node modules sharp:"
-          ls -la node_modules/sharp/ 2>/dev/null || echo "No sharp module found"
-          echo ""
-          echo "Recent npm logs:"
-          tail -50 ~/.npm/_logs/*.log 2>/dev/null || echo "No npm logs found"
-        
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.platform }}-${{ matrix.arch }}
+          name: build-windows-x64
           path: out/make/
           
   release:
@@ -212,182 +65,14 @@ jobs:
       - name: Download Windows Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-win32-x64
+          name: build-windows-x64
           path: ./artifacts/win32/
-          
-      - name: Download macOS Intel Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-darwin-x64
-          path: ./artifacts/darwin-x64/
-          
-      - name: Download macOS Apple Silicon Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-darwin-arm64
-          path: ./artifacts/darwin-arm64/
-          
-      - name: Debug artifacts information
-        run: |
-          echo "=== Detailed Artifacts Debug Information ==="
-          echo "Current working directory: $(pwd)"
-          echo "Available disk space:"
-          df -h .
-          echo ""
-          echo "=== Directory Structure ==="
-          find ./artifacts -type d | sort
-          echo ""
-          echo "=== All Files with Details ==="
-          find ./artifacts -type f -exec ls -lah {} \; | head -30
-          echo ""
-          echo "=== File Count by Type ==="
-          find ./artifacts -type f -name "*.exe" | wc -l | xargs echo "EXE files:"
-          find ./artifacts -type f -name "*.msi" | wc -l | xargs echo "MSI files:"
-          find ./artifacts -type f -name "*.dmg" | wc -l | xargs echo "DMG files:"
-          find ./artifacts -type f -name "*.zip" | wc -l | xargs echo "ZIP files:"
-          find ./artifacts -type f -name "*.app" | wc -l | xargs echo "APP files:"
-          echo ""
-          echo "=== File Paths for Release ==="
-          find ./artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" \) | sort
-          echo ""
-          echo "=== File Checksums ==="
-          find ./artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" \) -exec sha256sum {} \;
-          
-      - name: Pre-release file validation
-        run: |
-          echo "=== Pre-Release Validation ==="
-          echo "GitHub ref: ${{ github.ref }}"
-          echo "GitHub ref name: ${{ github.ref_name }}"
-          echo "GitHub ref type: ${{ github.ref_type }}"
-          echo "Repository: ${{ github.repository }}"
-          echo ""
-          echo "=== Files to be uploaded ==="
-          echo "Windows files:"
-          find ./artifacts/win32 -type f 2>/dev/null || echo "No Windows files found"
-          echo "macOS Intel files:"
-          find ./artifacts/darwin-x64 -type f 2>/dev/null || echo "No macOS Intel files found"
-          echo "macOS Apple Silicon files:"
-          find ./artifacts/darwin-arm64 -type f 2>/dev/null || echo "No macOS Apple Silicon files found"
-          echo ""
-          echo "=== Final file list ==="
-          find ./artifacts -type f | while read file; do
-            echo "File: $file ($(stat -c%s "$file" 2>/dev/null || stat -f%z "$file") bytes)"
-          done
-          
-      - name: Verify Release Files
-        run: |
-          echo "=== Verifying Release Files ==="
-          
-          # Define expected files based on Electron Forge output structure
-          EXPECTED_FILES=(
-            "./artifacts/win32/squirrel.windows/x64/LocalSqueeze-Setup.exe"
-            "./artifacts/win32/wix/x64/LocalSqueeze.msi"
-            "./artifacts/win32/zip/win32/x64/LocalSqueeze-win32-x64-${{ github.ref_name }}.zip"
-          )
-          
-          # Also check for alternative paths
-          ALTERNATIVE_FILES=(
-            "./artifacts/win32/LocalSqueeze-Setup.exe"
-            "./artifacts/win32/LocalSqueeze.msi"
-            "./artifacts/win32/LocalSqueeze-win32-x64-${{ github.ref_name }}.zip"
-          )
-          
-          # Check Windows files
-          echo "Checking expected file paths:"
-          for file in "${EXPECTED_FILES[@]}"; do
-            if [ -f "$file" ]; then
-              echo "✓ Found: $file"
-              ls -lah "$file"
-            else
-              echo "✗ Missing: $file"
-            fi
-          done
-          
-          echo ""
-          echo "Checking alternative file paths:"
-          for file in "${ALTERNATIVE_FILES[@]}"; do
-            if [ -f "$file" ]; then
-              echo "✓ Found alternative: $file"
-              ls -lah "$file"
-            else
-              echo "✗ Missing alternative: $file"
-            fi
-          done
-          
-          # Check macOS files
-          echo ""
-          echo "=== macOS Files ==="
-          find ./artifacts -name "*.dmg" -o -name "*darwin*.zip" | while read file; do
-            echo "✓ Found: $file"
-            ls -lah "$file"
-          done
-          
-          # List all files that will be uploaded
-          echo ""
-          echo "=== Files to be uploaded ==="
-          echo "All release files found:"
-          find ./artifacts -type f \( -name "*Setup*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) | sort
-          
-          # Verify at least some files exist
-          FILE_COUNT=$(find ./artifacts -type f \( -name "*Setup*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) | wc -l)
-          echo "Total release files found: $FILE_COUNT"
-          if [ "$FILE_COUNT" -eq 0 ]; then
-            echo "⚠️  WARNING: No release files found!"
-            exit 1
-          fi
-          
-      - name: Final Release Files Check
-        run: |
-          echo "=== Final Release Files Check ==="
-          echo "Checking exact files that will be uploaded:"
-          
-          # Check each file pattern individually
-          echo "Windows Setup files:"
-          find ./artifacts/win32 -name "*Setup*.exe" -type f 2>/dev/null || echo "No Setup.exe files found"
-          
-          echo "Windows MSI files:"
-          find ./artifacts/win32 -name "*.msi" -type f 2>/dev/null || echo "No MSI files found"
-          
-          echo "Windows ZIP files:"
-          find ./artifacts/win32 -name "*.zip" -type f 2>/dev/null || echo "No Windows ZIP files found"
-          
-          echo "macOS Intel DMG files:"
-          find ./artifacts/darwin-x64 -name "*.dmg" -type f 2>/dev/null || echo "No Intel DMG files found"
-          
-          echo "macOS Intel ZIP files:"
-          find ./artifacts/darwin-x64 -name "*.zip" -type f 2>/dev/null || echo "No Intel ZIP files found"
-          
-          echo "macOS Apple Silicon DMG files:"
-          find ./artifacts/darwin-arm64 -name "*.dmg" -type f 2>/dev/null || echo "No Apple Silicon DMG files found"
-          
-          echo "macOS Apple Silicon ZIP files:"
-          find ./artifacts/darwin-arm64 -name "*.zip" -type f 2>/dev/null || echo "No Apple Silicon ZIP files found"
-          
-          # Test file accessibility
-          echo "\nTesting file accessibility:"
-          find ./artifacts -type f \( -name "*Setup*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) | while read file; do
-            if [ -r "$file" ]; then
-              echo "✓ Readable: $file ($(stat -c%s "$file" 2>/dev/null || stat -f%z "$file") bytes)"
-            else
-              echo "✗ Not readable: $file"
-            fi
-          done
           
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e  # 遇到错误立即退出
-          
-          echo "=== GitHub CLI Version ==="
-          gh --version
-          
-          echo "=== GitHub Authentication Check ==="
-          gh auth status
-          
-          echo "=== Repository Information ==="
-          echo "Repository: ${{ github.repository }}"
-          echo "Tag: ${{ github.ref_name }}"
           
           # 检查release是否已存在
           echo "=== Checking if release already exists ==="
@@ -398,44 +83,23 @@ jobs:
             sleep 2  # 等待GitHub API同步
           fi
           
-          # 收集所有发布文件
-          echo "=== Collecting release files ==="
-          find ./artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) > /tmp/files.txt
+          # 收集Windows发布文件
+          find ./artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.zip" \) > /tmp/files.txt
           
           if [ ! -s /tmp/files.txt ]; then
             echo "❌ No release files found!"
             exit 1
           fi
-          
-          echo "✅ Found release files:"
-          cat /tmp/files.txt
           
           # 验证文件是否可读
-          echo "=== Validating file accessibility ==="
-          if [ ! -s /tmp/files.txt ]; then
-            echo "❌ No release files found!"
-            exit 1
-          fi
-          
           while IFS= read -r file; do
-            if [ -f "$file" ] && [ -r "$file" ]; then
-              file_size=$(stat -c%s "$file" 2>/dev/null || echo "unknown")
-              echo "✅ $file ($file_size bytes)"
-            else
-              echo "❌ Cannot access: $file"
+            if [ ! -f "$file" ] || [ ! -r "$file" ]; then
+              echo "❌ Cannot access file: $file"
               exit 1
             fi
           done < /tmp/files.txt
           
           # 创建GitHub Release
-          echo "=== Creating GitHub Release ==="
-          echo "Files to upload:"
-          cat /tmp/files.txt
-          
-          # 创建release，使用--clobber参数处理重复文件
-          echo "Creating release with files:"
-          cat /tmp/files.txt
-          
           # 先创建release（不上传文件）
           gh release create "${{ github.ref_name }}" \
             --draft \
@@ -444,10 +108,6 @@ jobs:
             --notes "Automated release for version ${{ github.ref_name }}"
           
           # 然后逐个上传文件，使用--clobber参数
-          echo "Uploading files to release..."
           while IFS= read -r file; do
-            echo "Uploading: $file"
             gh release upload "${{ github.ref_name }}" "$file" --clobber
           done < /tmp/files.txt
-          
-          echo "✅ Release created successfully!"
