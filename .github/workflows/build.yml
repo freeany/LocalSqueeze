@@ -143,12 +143,5 @@ jobs:
           draft: true
           prerelease: false
           generate_release_notes: true
-          fail_on_unmatched_files: false
           files: |
-            ./artifacts/win32/**/*Setup*.exe
-            ./artifacts/win32/**/LocalSqueeze.msi
-            ./artifacts/win32/**/*.zip
-            ./artifacts/darwin-x64/**/*.dmg
-            ./artifacts/darwin-x64/**/*.zip
-            ./artifacts/darwin-arm64/**/*.dmg
-            ./artifacts/darwin-arm64/**/*.zip
+             ./artifacts/**/*
