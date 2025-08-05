@@ -146,8 +146,7 @@ jobs:
           fail_on_unmatched_files: false
           files: |
             ./artifacts/win32/**/*Setup*.exe
-            ./artifacts/win32/**/*Setup*.msi
-            ./artifacts/win32/**/*.msi
+            ./artifacts/win32/**/LocalSqueeze.msi
             ./artifacts/win32/**/*.zip
             ./artifacts/darwin-x64/**/*.dmg
             ./artifacts/darwin-x64/**/*.zip
