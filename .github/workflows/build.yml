@@ -81,6 +81,17 @@ jobs:
           
           # 运行electron-rebuild确保所有原生模块正确编译
           echo "Running electron-rebuild..."
+          # 确保所有二进制文件有执行权限
+          chmod +x node_modules/.bin/* 2>/dev/null || true
+          # 特别确保electron-rebuild有执行权限
+          if [ -f "node_modules/.bin/electron-rebuild" ]; then
+            chmod +x node_modules/.bin/electron-rebuild
+            echo "electron-rebuild permissions set"
+          else
+            echo "electron-rebuild binary not found, installing..."
+            npm install @electron/rebuild --save-dev
+            chmod +x node_modules/.bin/electron-rebuild 2>/dev/null || true
+          fi
           npx electron-rebuild --arch=${{ matrix.arch }} --force
           
           # 验证sharp安装
