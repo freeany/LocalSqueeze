@@ -148,8 +148,8 @@ jobs:
             ./artifacts/win32/squirrel.windows/x64/LocalSqueeze-Setup.exe
             ./artifacts/win32/squirrel.windows/x64/LocalSqueezeSetup.msi
             ./artifacts/win32/wix/x64/LocalSqueeze.msi
-            ./artifacts/win32/zip/win32/x64/LocalSqueeze-win32-x64-1.0.9.zip
+            ./artifacts/win32/zip/win32/x64/LocalSqueeze-win32-x64-${{ github.ref_name }}.zip
             ./artifacts/darwin-x64/LocalSqueeze.dmg
-            ./artifacts/darwin-x64/zip/darwin/arm64/LocalSqueeze-darwin-arm64-1.0.9.zip
+            ./artifacts/darwin-x64/zip/darwin/x64/LocalSqueeze-darwin-x64-${{ github.ref_name }}.zip
             ./artifacts/darwin-arm64/LocalSqueeze.dmg
-            ./artifacts/darwin-arm64/zip/darwin/arm64/LocalSqueeze-darwin-arm64-1.0.9.zip
+            ./artifacts/darwin-arm64/zip/darwin/arm64/LocalSqueeze-darwin-arm64-${{ github.ref_name }}.zip
