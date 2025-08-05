@@ -239,17 +239,22 @@ jobs:
           done
           
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          draft: true
-          prerelease: false
-          generate_release_notes: true
-          fail_on_unmatched_files: false
-          token: ${{ secrets.GITHUB_TOKEN }}
-          files: |
-            ./artifacts/**/*.exe
-            ./artifacts/**/*.msi
-            ./artifacts/**/*.zip
-            ./artifacts/**/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 收集所有发布文件
+          FILES=$(find ./artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) | tr '\n' ' ')
+          
+          echo "Found release files: $FILES"
+          
+          # 创建GitHub Release
+          if [ -n "$FILES" ]; then
+            gh release create ${{ github.ref_name }} \
+              $FILES \
+              --draft \
+              --generate-notes \
+              --title "Release ${{ github.ref_name }}"
+          else
+            echo "No release files found!"
+            exit 1
+          fi
