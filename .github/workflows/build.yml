@@ -18,6 +18,7 @@ jobs:
         include:
           - os: windows-latest
             platform: win32
+            arch: x64
           - os: macos-latest
             platform: darwin
             arch: x64
@@ -39,7 +40,7 @@ jobs:
         run: npm ci
         
       - name: Build (Windows)
-        if: matrix.os == 'windows-latest'
+        if: matrix.platform == 'win32'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run make
@@ -61,7 +62,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.platform }}${{ matrix.arch && format('-{0}', matrix.arch) || '' }}
+          name: build-${{ matrix.platform }}-${{ matrix.arch }}
           path: out/make/
           
   release:
@@ -73,7 +74,7 @@ jobs:
       - name: Download Windows Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-win32
+          name: build-win32-x64
           path: ./artifacts/win32/
           
       - name: Download macOS Intel Artifacts
@@ -123,15 +124,79 @@ jobs:
           echo "Repository: ${{ github.repository }}"
           echo ""
           echo "=== Files to be uploaded ==="
-          for pattern in "./artifacts/win32/**/*" "./artifacts/darwin-x64/**/*" "./artifacts/darwin-arm64/**/*"; do
-            echo "Pattern: $pattern"
-            find ./artifacts -path "${pattern#./artifacts/}" -type f 2>/dev/null || echo "No files found for pattern: $pattern"
-          done
+          echo "Windows files:"
+          find ./artifacts/win32 -type f 2>/dev/null || echo "No Windows files found"
+          echo "macOS Intel files:"
+          find ./artifacts/darwin-x64 -type f 2>/dev/null || echo "No macOS Intel files found"
+          echo "macOS Apple Silicon files:"
+          find ./artifacts/darwin-arm64 -type f 2>/dev/null || echo "No macOS Apple Silicon files found"
           echo ""
           echo "=== Final file list ==="
           find ./artifacts -type f | while read file; do
             echo "File: $file ($(stat -c%s "$file" 2>/dev/null || stat -f%z "$file") bytes)"
           done
+          
+      - name: Verify Release Files
+        run: |
+          echo "=== Verifying Release Files ==="
+          
+          # Define expected files based on Electron Forge output structure
+          EXPECTED_FILES=(
+            "./artifacts/win32/squirrel.windows/x64/LocalSqueeze-Setup.exe"
+            "./artifacts/win32/wix/x64/LocalSqueeze.msi"
+            "./artifacts/win32/zip/win32/x64/LocalSqueeze-win32-x64-${{ github.ref_name }}.zip"
+          )
+          
+          # Also check for alternative paths
+          ALTERNATIVE_FILES=(
+            "./artifacts/win32/LocalSqueeze-Setup.exe"
+            "./artifacts/win32/LocalSqueeze.msi"
+            "./artifacts/win32/LocalSqueeze-win32-x64-${{ github.ref_name }}.zip"
+          )
+          
+          # Check Windows files
+          echo "Checking expected file paths:"
+          for file in "${EXPECTED_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✓ Found: $file"
+              ls -lah "$file"
+            else
+              echo "✗ Missing: $file"
+            fi
+          done
+          
+          echo ""
+          echo "Checking alternative file paths:"
+          for file in "${ALTERNATIVE_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✓ Found alternative: $file"
+              ls -lah "$file"
+            else
+              echo "✗ Missing alternative: $file"
+            fi
+          done
+          
+          # Check macOS files
+          echo ""
+          echo "=== macOS Files ==="
+          find ./artifacts -name "*.dmg" -o -name "*darwin*.zip" | while read file; do
+            echo "✓ Found: $file"
+            ls -lah "$file"
+          done
+          
+          # List all files that will be uploaded
+          echo ""
+          echo "=== Files to be uploaded ==="
+          echo "All release files found:"
+          find ./artifacts -type f \( -name "*Setup*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) | sort
+          
+          # Verify at least some files exist
+          FILE_COUNT=$(find ./artifacts -type f \( -name "*Setup*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) | wc -l)
+          echo "Total release files found: $FILE_COUNT"
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "⚠️  WARNING: No release files found!"
+            exit 1
+          fi
           
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -143,5 +208,12 @@ jobs:
           draft: true
           prerelease: false
           generate_release_notes: true
+          fail_on_unmatched_files: false
           files: |
-             ./artifacts/**/*
+            ./artifacts/win32/**/*Setup*.exe
+            ./artifacts/win32/**/*.msi
+            ./artifacts/win32/**/*.zip
+            ./artifacts/darwin-x64/**/*.dmg
+            ./artifacts/darwin-x64/**/*.zip
+            ./artifacts/darwin-arm64/**/*.dmg
+            ./artifacts/darwin-arm64/**/*.zip
