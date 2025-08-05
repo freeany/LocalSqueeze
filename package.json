@@ -1,7 +1,7 @@
 {
   "name": "@freeany/local-squeeze",
   "productName": "LocalSqueeze",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Local Image Compression Tool",
   "main": ".vite/build/main.js",
   "scripts": {

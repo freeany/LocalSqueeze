@@ -71,6 +71,9 @@ jobs:
     if: github.ref_type == 'tag'
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Download Windows Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -198,10 +201,45 @@ jobs:
             exit 1
           fi
           
+      - name: Final Release Files Check
+        run: |
+          echo "=== Final Release Files Check ==="
+          echo "Checking exact files that will be uploaded:"
+          
+          # Check each file pattern individually
+          echo "Windows Setup files:"
+          find ./artifacts/win32 -name "*Setup*.exe" -type f 2>/dev/null || echo "No Setup.exe files found"
+          
+          echo "Windows MSI files:"
+          find ./artifacts/win32 -name "*.msi" -type f 2>/dev/null || echo "No MSI files found"
+          
+          echo "Windows ZIP files:"
+          find ./artifacts/win32 -name "*.zip" -type f 2>/dev/null || echo "No Windows ZIP files found"
+          
+          echo "macOS Intel DMG files:"
+          find ./artifacts/darwin-x64 -name "*.dmg" -type f 2>/dev/null || echo "No Intel DMG files found"
+          
+          echo "macOS Intel ZIP files:"
+          find ./artifacts/darwin-x64 -name "*.zip" -type f 2>/dev/null || echo "No Intel ZIP files found"
+          
+          echo "macOS Apple Silicon DMG files:"
+          find ./artifacts/darwin-arm64 -name "*.dmg" -type f 2>/dev/null || echo "No Apple Silicon DMG files found"
+          
+          echo "macOS Apple Silicon ZIP files:"
+          find ./artifacts/darwin-arm64 -name "*.zip" -type f 2>/dev/null || echo "No Apple Silicon ZIP files found"
+          
+          # Test file accessibility
+          echo "\nTesting file accessibility:"
+          find ./artifacts -type f \( -name "*Setup*.exe" -o -name "*.msi" -o -name "*.zip" -o -name "*.dmg" \) | while read file; do
+            if [ -r "$file" ]; then
+              echo "✓ Readable: $file ($(stat -c%s "$file" 2>/dev/null || stat -f%z "$file") bytes)"
+            else
+              echo "✗ Not readable: $file"
+            fi
+          done
+          
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
@@ -209,6 +247,7 @@ jobs:
           prerelease: false
           generate_release_notes: true
           fail_on_unmatched_files: false
+          token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             ./artifacts/win32/**/*Setup*.exe
             ./artifacts/win32/**/*.msi
