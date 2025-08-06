@@ -1,3 +1,38 @@
+# 🚀 LocalSqueeze v1.0.4 发布公告
+
+LocalSqueeze v1.0.4 现已发布！
+🎯 主要解决：英特尔芯片 Mac 兼容性问题
+```
+  npm run make:mac:intel   # 构建英特尔版本
+  npm run make:mac:arm64   # 构建 Apple Silicon 版本
+```
+## 💻 下载指南
+
+### macOS 用户请注意 ⚠️
+
+根据您的 Mac 类型选择对应版本：
+
+```bash
+# 查看您的 Mac 架构
+$ uname -m
+# x86_64 = 英特尔芯片 → 下载 Intel 版本
+# arm64 = Apple Silicon → 下载 Apple Silicon 版本
+```
+
+### 📥 下载链接
+
+- 💾 [Windows 安装包](https://github.com/freeany/LocalSqueeze/releases/download/v1.0.4/LocalSqueeze-Setup.exe)
+- 🍎 [macOS (Intel) 安装包](https://github.com/freeany/LocalSqueeze/releases/download/v1.0.4/LocalSqueeze-darwin-x64-1.0.4.zip)
+- 🍎 [macOS (Apple Silicon) 安装包](https://github.com/freeany/LocalSqueeze/releases/download/v1.0.4/LocalSqueeze-darwin-arm64-1.0.4.zip)
+
+<div align="center">
+  <code>$ echo "Universal Mac Support Achieved!" | LocalSqueeze</code>
+</div>
+
+---
+
+**重要提醒**：如果您使用的是英特尔芯片的 Mac，请务必下载 Intel 版本以获得最佳体验！
+
 # 🚀 LocalSqueeze v1.0.3 发布公告
 
 ![LocalSqueeze](https://img.shields.io/badge/LocalSqueeze-v1.0.3-blue?style=for-the-badge&logo=electron&logoColor=white)
