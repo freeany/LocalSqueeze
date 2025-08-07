@@ -1,11 +1,12 @@
 <div align="center">
   <img src="./src/assets/icon.svg" width="120" height="120" alt="LocalSqueeze Logo" />
 
-# 					LocalSqueeze
+<h1 align="center">LocalSqueeze</h1>
 
 ​			  ![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-0078D4?style=for-the-badge&logo=windows&logoColor=white) ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black) ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge) ![Version](https://img.shields.io/badge/version-v1.0.3-blue?style=for-the-badge) ![Stars](https://img.shields.io/github/stars/freeany/LocalSqueeze?style=for-the-badge&logo=github)
 
-**一款功能丰富、高效灵活的跨平台桌面图片压缩应用**
+<div align="center">简体中文 | <a href="./README.en-US.md">English</a></div>
+<h5 align="center">一款功能丰富、高效灵活的跨平台桌面图片压缩应用</h5>
 
 </div>
 
@@ -17,11 +18,11 @@
 
 ## ✨ 特性
 - **🔐 安全至上**：所有操作均在本地完成，零数据泄露风险
-- **🔍 高质量压缩** - 智能压缩算法，在保持图片质量的同时最大程度减小文件大小
+- **🔍 高质量压缩** - 智能压缩策略，在保持图片质量的同时最大程度减小文件大小
 - **🚀 批量处理** - 同时处理多张图片，提高工作效率
 - **🎨 体验优先**：直观的界面设计，流畅的操作体验
 - **🔧 灵活配置**：丰富的压缩参数，满足专业用户需求
-- **🌍 跨平台**：支持 Windows、macOS、Linux 三大平台
+- **🌍 跨平台**：支持 Windows、macOS 主流平台
 - **👁️ 效果对比** - 直观对比压缩前后的效果，确保图片质量
 - **🌓 深色模式** - 支持深色/浅色主题切换
 
@@ -40,8 +41,7 @@
 
 #### 相比 Picdiet
 
-- 📦 **更优雅的技术选型** - 基于 Electron 构建，虽然包体积稍大，但提供更好的跨平台兼容性和用户体验
-- 🎯 **更强的压缩核心** - 自研压缩算法，压缩效果和处理速度显著优于竞品
+- 🎯 **支持的图片格式更多** - Picdiet 仅支持 JPG
 - 🎨 **更佳的交互体验** - 精心设计的用户界面，操作流程更加直观友好
 - ⚙️ **更丰富的配置选项** - 提供更多自定义压缩参数，满足不同场景需求
 
@@ -100,9 +100,6 @@ npm run make:win
 
 # 构建macOS平台安装包
 npm run make:mac
-
-# 构建所有平台安装包
-npm run make:all
 ```
 
 ## 🚢 发布
@@ -110,9 +107,6 @@ npm run make:all
 ```bash
 # 发布当前平台的安装包到GitHub Release
 npm run publish
-
-# 发布所有平台的安装包到GitHub Release
-npm run publish:all
 ```
 
 ### 自动化构建和发布
