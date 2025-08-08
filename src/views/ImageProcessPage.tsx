@@ -370,9 +370,29 @@ export default function ImageProcessPage() {
       
       // 将压缩结果保存到会话存储，以便在对比页面使用
       sessionStorage.setItem('compressionResults', JSON.stringify(result.results));
+      
+      // 压缩完成后，删除临时文件以节省空间
+       try {
+         for (const tempPath of validPaths) {
+           await window.compression.deleteTempFile(tempPath);
+         }
+         console.log('已删除临时文件，节省空间');
+       } catch (cleanupError) {
+         console.warn('清理临时文件时出错:', cleanupError);
+       }
     } catch (error) {
       console.error('处理图片时出错:', error);
       alert(`处理图片时出错: ${error instanceof Error ? error.message : '未知错误'}\n请查看控制台获取详细信息`);
+      
+      // 即使处理失败，也要清理临时文件
+       try {
+         for (const tempPath of validPaths) {
+           await window.compression.deleteTempFile(tempPath);
+         }
+         console.log('处理失败后已清理临时文件');
+       } catch (cleanupError) {
+         console.warn('清理临时文件时出错:', cleanupError);
+       }
     } finally {
       // 重置处理状态
       setIsProcessing(false);
@@ -676,4 +696,4 @@ export default function ImageProcessPage() {
       </div>
     </div>
   );
-} 
+}

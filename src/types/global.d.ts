@@ -88,6 +88,7 @@ declare global {
       getCompressionPreset: (presetName: string) => Promise<CompressionSettings>;
       selectOutputDirectory: () => Promise<string | undefined>;
       clearTempFiles: () => Promise<any>;
+      deleteTempFile: (filePath: string) => Promise<{success: boolean; error?: string}>;
       onCompressionProgress: (callback: (data: {
         current: number;
         total: number;
@@ -153,4 +154,4 @@ declare module '*.svg' {
 declare module '*.gif' {
   const value: string;
   export default value;
-} 
+}

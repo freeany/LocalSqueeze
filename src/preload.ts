@@ -50,6 +50,12 @@ const compressionAPI = {
     return ipcRenderer.invoke('clear-temp-files');
   },
   
+  // 删除单个临时文件
+  deleteTempFile: (filePath: string) => {
+    // 已删除日志
+    return ipcRenderer.invoke('delete-temp-file', filePath);
+  },
+  
   // 监听压缩进度
   onCompressionProgress: (callback: (data: any) => void) => {
     // 已删除日志
@@ -188,6 +194,7 @@ const validChannels = [
   'get-compression-preset',
   'select-output-directory',
   'clear-temp-files',
+  'delete-temp-file',
   'save-temp-file',
   'get-local-image-url',
   'get-image-url',
