@@ -15,7 +15,7 @@ const menuItems = [
   { name: '首页', icon: <Home className="h-5 w-5" />, path: '/' },
   { name: '图片处理', icon: <Upload className="h-5 w-5" />, path: '/process' },
   { name: '压缩设置', icon: <Sliders className="h-5 w-5" />, path: '/settings' },
-  { name: '效果对比', icon: <Images className="h-5 w-5" />, path: '/comparison' },
+  // { name: '效果对比', icon: <Images className="h-5 w-5" />, path: '/comparison' },
   // { name: '批量处理', icon: <Package className="h-5 w-5" />, path: '/batch' },
   { name: '导出管理', icon: <Download className="h-5 w-5" />, path: '/export' },
   { name: '帮助', icon: <HelpCircle className="h-5 w-5" />, path: '/help' },
@@ -26,7 +26,7 @@ export default function Sidebar() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   return (
-    <div className="w-64 bg-secondary/50 dark:bg-muted p-5 border-r border-border transition-all duration-300 shadow-sm">
+    <div className="w-48 bg-secondary/50 dark:bg-muted p-4 border-r border-border transition-all duration-300 shadow-sm">
       <nav className="space-y-1.5">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;

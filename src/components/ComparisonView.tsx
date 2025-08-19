@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, ArrowRight, Plus, Minus, Maximize, Download, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { formatFileSize, calculateCompressionRate } from '../lib/utils';
+import { formatFileSize } from '../lib/utils';
 // eslint-disable-next-line import/no-unresolved
 import { CompressionResult } from '../types/global';
 
@@ -18,9 +18,53 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
   const [zoom, setZoom] = useState(1);
   const sliderContainerRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   
   // 当前选中的压缩结果
   const currentResult = results[activeIndex];
+  
+  // 加载图片数据URL
+  useEffect(() => {
+    const loadImageUrls = async () => {
+      const newImageUrls: Record<string, string> = {};
+      
+      for (const result of results) {
+        // 加载原始图片
+        if (!imageUrls[result.originalPath]) {
+          try {
+            const originalDataUrl = await window.electron.ipcRenderer.invoke('get-image-data-url', result.originalPath);
+            console.log(originalDataUrl,'originalDataUrl');
+            
+            if (originalDataUrl) {
+              newImageUrls[result.originalPath] = originalDataUrl;
+            }
+          } catch (error) {
+            console.error('加载原始图片失败:', error);
+          }
+        }
+        
+        // 加载压缩后图片
+        if (!imageUrls[result.outputPath]) {
+          try {
+            const compressedDataUrl = await window.electron.ipcRenderer.invoke('get-image-data-url', result.outputPath);
+            if (compressedDataUrl) {
+              newImageUrls[result.outputPath] = compressedDataUrl;
+            }
+          } catch (error) {
+            console.error('加载压缩后图片失败:', error);
+          }
+        }
+      }
+      
+      if (Object.keys(newImageUrls).length > 0) {
+        setImageUrls(prev => ({ ...prev, ...newImageUrls }));
+      }
+    };
+    
+    if (results.length > 0) {
+      loadImageUrls();
+    }
+  }, [results]);
   
   // 处理缩放
   const handleZoom = (action: 'in' | 'out' | 'reset') => {
@@ -122,11 +166,17 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
               className={`relative cursor-pointer flex-shrink-0 ${activeIndex === index ? 'ring-2 ring-primary' : ''}`}
               onClick={() => setActiveIndex(index)}
             >
-              <img 
-                src={`file://${result.originalPath}`} 
-                alt={`缩略图 ${index + 1}`}
-                className="w-24 h-24 object-cover rounded-md"
-              />
+              {imageUrls[result.originalPath] ? (
+                <img 
+                  src={imageUrls[result.originalPath]} 
+                  alt={`缩略图 ${index + 1}`}
+                  className="w-24 h-24 object-cover rounded-md"
+                />
+              ) : (
+                <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center">
+                  <div className="text-xs text-gray-500">加载中...</div>
+                </div>
+              )}
               <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 text-center truncate rounded-b-md">
                 {result.originalPath.split(/[\\/]/).pop()}
               </div>
@@ -254,11 +304,17 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
             </div>
             <div className="relative h-[400px] overflow-auto bg-[#f0f0f0] dark:bg-[#1a1a1a]">
               <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }} className="min-h-full min-w-full">
-                <img 
-                  src={`file://${currentResult.originalPath}`} 
-                  alt="原始图片" 
-                  className="max-w-none"
-                />
+                {imageUrls[currentResult.originalPath] ? (
+                  <img 
+                    src={imageUrls[currentResult.originalPath]} 
+                    alt="原始图片" 
+                    className="max-w-none"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-gray-500">加载中...</div>
+                  </div>
+                )}
               </div>
               <div className="absolute bottom-3 right-3 flex gap-1">
                 <button
@@ -291,11 +347,17 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
             </div>
             <div className="relative h-[400px] overflow-auto bg-[#f0f0f0] dark:bg-[#1a1a1a]">
               <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }} className="min-h-full min-w-full">
-                <img 
-                  src={`file://${currentResult.outputPath}`} 
-                  alt="压缩后图片" 
-                  className="max-w-none"
-                />
+                {imageUrls[currentResult.outputPath] ? (
+                  <img 
+                    src={imageUrls[currentResult.outputPath]} 
+                    alt="压缩后图片" 
+                    className="max-w-none"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-gray-500">加载中...</div>
+                  </div>
+                )}
               </div>
               <div className="absolute bottom-3 right-3 flex gap-1">
                 <button
@@ -338,11 +400,17 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
             {/* 原始图片 */}
             <div className="absolute inset-0 overflow-auto">
               <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }} className="min-h-full min-w-full">
-                <img 
-                  src={`file://${currentResult.originalPath}`} 
-                  alt="原始图片" 
-                  className="max-w-none"
-                />
+                {imageUrls[currentResult.originalPath] ? (
+                  <img 
+                    src={imageUrls[currentResult.originalPath]} 
+                    alt="原始图片" 
+                    className="max-w-none"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-gray-500">加载中...</div>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -352,11 +420,17 @@ export default function ComparisonView({ results, onRecompress }: ComparisonView
               style={{ clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)` }}
             >
               <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }} className="min-h-full min-w-full">
-                <img 
-                  src={`file://${currentResult.outputPath}`} 
-                  alt="压缩后图片" 
-                  className="max-w-none"
-                />
+                {imageUrls[currentResult.outputPath] ? (
+                  <img 
+                    src={imageUrls[currentResult.outputPath]} 
+                    alt="压缩后图片" 
+                    className="max-w-none"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-gray-500">加载中...</div>
+                  </div>
+                )}
               </div>
             </div>
             

@@ -43,14 +43,12 @@ const createWindow = () => {
   
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1600,
-    height: 900,
+    width: 900,
+    height: 800,
     icon: path.join(__dirname, '../assets/icons/icon.png'),
-    // 在生产环境下最大化窗口
     show: false, // 先隐藏窗口，等准备好后再显示，避免闪烁
     // 在生产环境下禁用菜单栏
     autoHideMenuBar: isProduction,
-    // 在生产环境下禁用窗口的最小化、最大化、关闭按钮的默认行为
     frame: true,
     webPreferences: {
       preload:  path.join(__dirname, 'preload.js'),
@@ -61,7 +59,7 @@ const createWindow = () => {
       // 允许加载本地资源
       webSecurity: false, // 注意：这会降低安全性，但在本地应用中可以接受
       // 启用开发者工具，在生产环境下禁用
-      devTools: !isProduction,
+      devTools: true,
       // 允许远程模块
       nodeIntegration: false,
       // 启用沙箱
@@ -85,10 +83,7 @@ const createWindow = () => {
   mainWindow.webContents.on('did-finish-load', () => {
     // 已删除日志
     
-    // 显示窗口并在生产环境下最大化
-    if (isProduction) {
-      mainWindow.maximize();
-    }
+    // 显示窗口
     mainWindow.show();
   });
 
@@ -152,6 +147,54 @@ app.on('ready', async () => {
   
   await ensureTempDir();
   initAllHandlers(); // 初始化所有IPC处理程序
+
+  // 注册读取图片为Data URL的处理程序（必须在initAllHandlers之后）
+  ipcMain.handle('get-image-data-url', async (_, filePath) => {
+    try {
+      console.log('=== NEW HANDLER ===');
+      console.log('正在尝试加载图片:', filePath);
+      console.log('文件是否存在:', existsSync(filePath));
+      console.log('=== NEW HANDLER ===');
+      
+      // 检查文件是否存在
+      if (!existsSync(filePath)) {
+        console.log('文件不存在，返回默认图片');
+        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptLTIgMTVsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiIGZpbGw9IiM5OTkiLz48L3N2Zz4=';
+      }
+      
+      console.log('文件存在，继续处理...');
+
+      // 读取文件
+      console.log('开始读取文件:', filePath);
+      const data = await fs.readFile(filePath);
+      console.log('文件读取成功，大小:', data.length, '字节');
+
+      // 检测文件类型
+      let mimeType = 'image/png'; // 默认MIME类型
+      if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+        mimeType = 'image/jpeg';
+      } else if (filePath.endsWith('.webp')) {
+        mimeType = 'image/webp';
+      } else if (filePath.endsWith('.gif')) {
+        mimeType = 'image/gif';
+      }
+      console.log('检测到的MIME类型:', mimeType);
+
+      // 转换为Base64
+      const base64Data = data.toString('base64');
+      console.log('Base64转换成功，长度:', base64Data.length);
+
+      // 返回Data URL
+      const dataUrl = `data:${mimeType};base64,${base64Data}`;
+      console.log('返回Data URL，前50个字符:', dataUrl.substring(0, 50));
+      return dataUrl;
+    } catch (error) {
+      console.error('加载图片时发生错误:', error);
+      console.error('错误详情:', error.message);
+      console.error('文件路径:', filePath);
+      return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptLTIgMTVsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy59LTcuNTlMMTkgOGwtOSA5eiIgZmlsbD0iIzk5OSIvPjwvc3ZnPg==';
+    }
+  });
 
   // 注册自定义协议，用于安全地加载本地文件
   protocol.registerFileProtocol('app-image', (request, callback) => {
@@ -232,40 +275,7 @@ app.on('ready', async () => {
     }
   });
 
-  // 注册读取图片为Data URL的处理程序
-  ipcMain.handle('get-image-data-url', async (_, filePath) => {
-    try {
-      // 检查文件是否存在
-      if (!existsSync(filePath)) {
-        // 已删除日志
-        // 返回一个默认的图片数据
-        return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiI+PC9yZWN0PjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ij48L2NpcmNsZT48cG9seWxpbmUgcG9pbnRzPSIyMSAxNSAxNiAxMCA1IDIxIj48L3BvbHlsaW5lPjwvc3ZnPg==';
-      }
 
-      // 读取文件
-      const data = await fs.readFile(filePath);
-
-      // 检测文件类型
-      let mimeType = 'image/png'; // 默认MIME类型
-      if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-        mimeType = 'image/jpeg';
-      } else if (filePath.endsWith('.webp')) {
-        mimeType = 'image/webp';
-      } else if (filePath.endsWith('.gif')) {
-        mimeType = 'image/gif';
-      }
-
-      // 转换为Base64
-      const base64Data = data.toString('base64');
-
-      // 返回Data URL
-      return `data:${mimeType};base64,${base64Data}`;
-    } catch (error) {
-      // 已删除日志
-      // 返回一个默认的图片数据
-      return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiI+PC9yZWN0PjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ij48L2NpcmNsZT48cG9seWxpbmUgcG9pbnRzPSIyMSAxNSAxNiAxMCA1IDIxIj48L3BvbHlsaW5lPjwvc3ZnPg==';
-    }
-  });
 
   // 注册保存文件的处理程序
   ipcMain.handle('save-file', async (_, args) => {

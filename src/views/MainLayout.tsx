@@ -49,7 +49,7 @@ export default function MainLayout() {
         {/* 主内容区域 */}
         <div className="flex flex-1 overflow-hidden">
           {/* 侧边栏 - 固定，不随内容滚动 */}
-          <aside className="w-64 overflow-x-hidden border-r border-border flex-shrink-0 h-full overflow-y-auto">
+          <aside className="w-48 overflow-x-hidden border-r border-border flex-shrink-0 h-full overflow-y-auto">
             <Sidebar />
           </aside>
           
