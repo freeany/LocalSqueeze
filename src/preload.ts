@@ -208,7 +208,10 @@ const validChannels = [
   'add-processed-image',
   'clear-stats-data',
   'save-compression-settings',
-  'get-compression-settings'
+  'get-compression-settings',
+  'select-folder',
+  'get-images-from-folder',
+  'read-file-as-buffer'
 ];
 
 // 暴露IPC通信API

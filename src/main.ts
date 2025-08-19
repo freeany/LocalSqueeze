@@ -346,6 +346,58 @@ app.on('ready', async () => {
     }
   });
 
+  // 注册选择文件夹的处理程序
+  ipcMain.handle('select-folder', async () => {
+    try {
+      const result = await dialog.showOpenDialog({
+        properties: ['openDirectory']
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('选择文件夹失败:', error);
+      return { canceled: true, filePaths: [] };
+    }
+  });
+
+  // 注册获取文件夹中图片文件的处理程序
+  ipcMain.handle('get-images-from-folder', async (_, folderPath) => {
+    try {
+      const files = await fs.readdir(folderPath);
+      const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif'];
+      
+      const imageFiles = [];
+      
+      for (const file of files) {
+        const filePath = path.join(folderPath, file);
+        const stat = await fs.stat(filePath);
+        
+        if (stat.isFile()) {
+          const ext = path.extname(file).toLowerCase();
+          if (imageExtensions.includes(ext)) {
+            imageFiles.push(filePath);
+          }
+        }
+      }
+      
+      return imageFiles;
+    } catch (error) {
+      console.error('获取文件夹中的图片失败:', error);
+      return [];
+    }
+  });
+
+  // 注册读取文件为Buffer的处理程序
+  ipcMain.handle('read-file-as-buffer', async (_, filePath) => {
+    try {
+      const data = await fs.readFile(filePath);
+      return data;
+    } catch (error) {
+      console.error('读取文件失败:', error);
+      throw new Error(`读取文件失败: ${error.message}`);
+    }
+  });
+
   createWindow();
 });
 

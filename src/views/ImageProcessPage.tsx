@@ -25,6 +25,9 @@ export default function ImageProcessPage() {
     processStatus: '0/0'
   });
   
+  // 添加处理模式状态：'images' 或 'folder'
+  const [processingMode, setProcessingMode] = useState<'images' | 'folder'>('images');
+  
   // 跟踪未处理的文件
   const [processedFileNames, setProcessedFileNames] = useState<Set<string>>(new Set());
   
@@ -96,17 +99,22 @@ export default function ImageProcessPage() {
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const droppedFiles = Array.from(e.dataTransfer.files).filter(
-        file => file.type.startsWith('image/')
-      );
-      
-      // 直接添加文件，不模拟上传进度
-      setFiles(prevFiles => [...prevFiles, ...droppedFiles]);
+    if (processingMode === 'images') {
+      // 图片模式：直接处理拖拽的图片文件
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const droppedFiles = Array.from(e.dataTransfer.files).filter(
+          file => file.type.startsWith('image/')
+        );
+        
+        setFiles(prevFiles => [...prevFiles, ...droppedFiles]);
+      }
+    } else {
+      // 文件夹模式：处理拖拽的文件夹
+      await handleFolderDrop(e.dataTransfer);
     }
   };
 
@@ -119,6 +127,117 @@ export default function ImageProcessPage() {
       
       // 直接添加文件，不模拟上传进度
       setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
+    }
+  };
+  
+  // 处理文件夹拖拽
+  const handleFolderDrop = async (dataTransfer: DataTransfer) => {
+    const allFiles: File[] = [];
+    
+    // 使用DataTransferItem API来处理文件夹
+    if (dataTransfer.items) {
+      const items = Array.from(dataTransfer.items);
+      
+      for (const item of items) {
+        if (item.kind === 'file') {
+          const entry = item.webkitGetAsEntry();
+          if (entry) {
+            await processEntry(entry, allFiles);
+          }
+        }
+      }
+    } else if (dataTransfer.files) {
+      // 降级处理：直接处理文件
+      const files = Array.from(dataTransfer.files).filter(
+        file => file.type.startsWith('image/')
+      );
+      allFiles.push(...files);
+    }
+    
+    if (allFiles.length > 0) {
+      setFiles(prevFiles => [...prevFiles, ...allFiles]);
+    } else {
+      alert('未找到图片文件，请确保文件夹中包含图片文件');
+    }
+  };
+  
+  // 递归处理文件夹条目
+  const processEntry = async (entry: any, allFiles: File[]) => {
+    if (entry.isFile) {
+      // 处理文件
+      const file = await new Promise<File>((resolve) => {
+        entry.file((file: File) => resolve(file));
+      });
+      
+      if (file.type.startsWith('image/')) {
+        allFiles.push(file);
+      }
+    } else if (entry.isDirectory) {
+      // 处理文件夹
+      const reader = entry.createReader();
+      const entries = await new Promise<any[]>((resolve) => {
+        reader.readEntries((entries: any[]) => resolve(entries));
+      });
+      
+      // 递归处理子文件夹
+      for (const childEntry of entries) {
+        await processEntry(childEntry, allFiles);
+      }
+    }
+  };
+  
+  // 选择文件夹
+  const handleFolderSelect = async () => {
+    try {
+      // 使用Electron的文件夹选择对话框
+      const result = await window.electron.ipcRenderer.invoke('select-folder');
+      if (result && result.filePaths && result.filePaths.length > 0) {
+        const folderPath = result.filePaths[0];
+        // 获取文件夹中的所有图片文件
+        const imageFiles = await window.electron.ipcRenderer.invoke('get-images-from-folder', folderPath);
+        
+        if (imageFiles && imageFiles.length > 0) {
+          // 将文件路径转换为File对象
+          const fileObjects = await Promise.all(
+            imageFiles.map(async (filePath: string) => {
+              const fileData = await window.electron.ipcRenderer.invoke('read-file-as-buffer', filePath);
+              const fileName = filePath.split(/[\\/]/).pop() || 'unknown';
+              const mimeType = getMimeTypeFromExtension(fileName);
+              return new File([fileData], fileName, { type: mimeType });
+            })
+          );
+          
+          setFiles(prevFiles => [...prevFiles, ...fileObjects]);
+        } else {
+          alert('所选文件夹中未找到图片文件');
+        }
+      }
+    } catch (error) {
+      console.error('选择文件夹失败:', error);
+      alert('选择文件夹失败');
+    }
+  };
+  
+  // 根据文件扩展名获取MIME类型
+  const getMimeTypeFromExtension = (fileName: string): string => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      case 'bmp':
+        return 'image/bmp';
+      case 'tiff':
+      case 'tif':
+        return 'image/tiff';
+      default:
+        return 'image/*';
     }
   };
   
@@ -136,6 +255,9 @@ export default function ImageProcessPage() {
 
   // 处理图片
   const processImages = async () => {
+    // 声明validPaths变量，确保在整个函数作用域中可用
+    let validPaths: string[] = [];
+    
     // 检查是否有文件需要处理
     if (files.length === 0) {
       alert('请先上传图片再进行处理');
@@ -216,7 +338,7 @@ export default function ImageProcessPage() {
       }
       
       // 过滤出成功的路径和原始文件名的映射
-      const validPaths = results.filter(r => r.path).map(r => r.path);
+      validPaths = results.filter(r => r.path).map(r => r.path);
       const originalFilenames = new Map<string, string>();
       results.forEach(r => {
         if (r.path && r.originalFilename) {
@@ -459,7 +581,7 @@ export default function ImageProcessPage() {
       <div className="page-header">
         <h1 className="text-3xl font-bold text-foreground mb-2">图片处理</h1>
         <p className="text-muted-foreground">
-          上传图片并进行压缩处理，支持单张和批量处理。支持JPG、PNG、GIF、WebP等格式。
+          上传图片并进行压缩处理，支持单张和批量处理。
         </p>
       </div>
       
@@ -470,6 +592,39 @@ export default function ImageProcessPage() {
           <div className="bg-card border border-border rounded-xl shadow-sm p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-foreground">上传图片</h2>
+            </div>
+            
+            {/* 处理模式选择 */}
+            <div className="mb-6">
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="processingMode"
+                    value="images"
+                    checked={processingMode === 'images'}
+                    onChange={(e) => setProcessingMode(e.target.value as 'images' | 'folder')}
+                    className="w-4 h-4 text-primary bg-background border-border focus:ring-primary focus:ring-2"
+                  />
+                  <span className="text-foreground">选择图片文件</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="processingMode"
+                    value="folder"
+                    checked={processingMode === 'folder'}
+                    onChange={(e) => setProcessingMode(e.target.value as 'images' | 'folder')}
+                    className="w-4 h-4 text-primary bg-background border-border focus:ring-primary focus:ring-2"
+                  />
+                  <span className="text-foreground">选择文件夹</span>
+                </label>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                {processingMode === 'images' 
+                  ? '选择单个或多个图片文件进行处理' 
+                  : '选择包含图片的文件夹，将处理文件夹内所有图片文件'}
+              </p>
             </div>
             
             <div 
@@ -483,17 +638,30 @@ export default function ImageProcessPage() {
                 <div className="p-4 bg-primary/10 rounded-full">
                   <Upload className="h-10 w-10 text-primary" />
                 </div>
-                <div className="text-lg text-foreground">拖拽图片到这里，或点击选择文件</div>
-                <label className="px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors cursor-pointer">
-                  选择文件
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    multiple 
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                  />
-                </label>
+                <div className="text-lg text-foreground">
+                  {processingMode === 'images' 
+                    ? '拖拽图片到这里，或点击选择文件' 
+                    : '拖拽文件夹到这里，或点击选择文件夹'}
+                </div>
+                {processingMode === 'images' ? (
+                  <label className="px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors cursor-pointer">
+                    选择文件
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      multiple 
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                    />
+                  </label>
+                ) : (
+                  <button 
+                    onClick={handleFolderSelect}
+                    className="px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors cursor-pointer"
+                  >
+                    选择文件夹
+                  </button>
+                )}
               </div>
             </div>
             
