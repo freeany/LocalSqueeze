@@ -105,7 +105,7 @@ export async function compressPng(
       height: outputMetadata.height || 0
     };
   } catch (error) {
-    console.error('PNG压缩失败:', error);
+
     return {
       success: false,
       originalPath: inputPath,
@@ -180,4 +180,4 @@ export function getHighCompressionPngSettings(): PngCompressionSettings {
     dither: 1.0,
     colors: 128
   };
-} 
+}

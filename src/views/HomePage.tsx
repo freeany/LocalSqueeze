@@ -704,13 +704,7 @@ export default function HomePage() {
                   </div>
                 )}
                 
-                <button
-                  onClick={processImages}
-                  disabled={isProcessing || !hasUnprocessedFiles}
-                  className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isProcessing ? '处理中...' : '开始处理'}
-                </button>
+
               </div>
             )}
             

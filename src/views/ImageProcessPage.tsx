@@ -52,13 +52,11 @@ export default function ImageProcessPage() {
       try {
         // 从本地存储获取保存的设置
         const savedSettings = await getCompressionSettings();
-        console.log('ImageProcessPage组件加载设置:', savedSettings);
-        console.log('文件命名设置:', savedSettings.fileNaming, savedSettings.fileExtension);
+
         
         // 构建压缩设置对象
         const settings = buildCompressionSettings(savedSettings);
-        console.log('构建的压缩设置对象:', settings);
-        console.log('构建后的文件命名设置:', (settings as any).fileNaming, (settings as any).fileExtension);
+
         
         // 更新压缩设置状态
         setCompressionSettings(settings);
@@ -213,7 +211,7 @@ export default function ImageProcessPage() {
         }
       }
     } catch (error) {
-      console.error('选择文件夹失败:', error);
+      
       alert('选择文件夹失败');
     }
   };
@@ -278,12 +276,10 @@ export default function ImageProcessPage() {
     try {
       // 获取最新的压缩设置
       const savedSettings = await getCompressionSettings();
-      console.log('处理图片时获取的设置:', savedSettings);
-      console.log('文件命名设置:', savedSettings.fileNaming, savedSettings.fileExtension);
+
       
       const currentSettings = buildCompressionSettings(savedSettings);
-      console.log('处理图片时构建的设置:', currentSettings);
-      console.log('构建后的文件命名设置:', (currentSettings as any).fileNaming, (currentSettings as any).fileExtension);
+
       
       // 将File对象转换为临时文件路径
       const filePaths: string[] = [];
@@ -309,7 +305,7 @@ export default function ImageProcessPage() {
                     resolve({ path: '', error: '读取文件内容失败' });
                   }
                 } catch (error) {
-                  console.error(`保存文件 ${file.name} 失败:`, error);
+
                   resolve({ path: '', error: `保存文件失败: ${error instanceof Error ? error.message : '未知错误'}` });
                 }
               };
@@ -320,7 +316,7 @@ export default function ImageProcessPage() {
               
               reader.readAsArrayBuffer(file);
             } catch (error) {
-              console.error(`处理文件 ${file.name} 时出错:`, error);
+
               resolve({ path: '', error: `处理文件失败: ${error instanceof Error ? error.message : '未知错误'}` });
             }
           })
@@ -333,7 +329,7 @@ export default function ImageProcessPage() {
       // 检查是否有错误
       const errors = results.filter(r => r.error);
       if (errors.length > 0) {
-        console.error('部分文件处理失败:', errors);
+
         alert(`部分文件处理失败:\n${errors.map(e => e.error).join('\n')}`);
       }
       
@@ -393,7 +389,7 @@ export default function ImageProcessPage() {
           }
         }
       } catch (error) {
-        console.error('压缩图片失败:', error);
+
         throw new Error(`压缩图片失败: ${error instanceof Error ? error.message : '未知错误'}`);
       }
       
@@ -442,7 +438,7 @@ export default function ImageProcessPage() {
             // 获取原始文件名，如果没有则使用路径中的文件名
             const originalFilename = originalFilenames.get(item.originalPath) || getBasename(item.originalPath);
             
-            console.error(`处理结果 ${item.originalPath} 失败:`, error);
+
             // 返回带有错误状态的结果
             return {
               id: Math.random().toString(36).substr(2, 9),
@@ -498,7 +494,7 @@ export default function ImageProcessPage() {
          for (const tempPath of validPaths) {
            await window.compression.deleteTempFile(tempPath);
          }
-         console.log('已删除临时文件，节省空间');
+
        } catch (cleanupError) {
          console.warn('清理临时文件时出错:', cleanupError);
        }
@@ -511,7 +507,7 @@ export default function ImageProcessPage() {
          for (const tempPath of validPaths) {
            await window.compression.deleteTempFile(tempPath);
          }
-         console.log('处理失败后已清理临时文件');
+
        } catch (cleanupError) {
          console.warn('清理临时文件时出错:', cleanupError);
        }

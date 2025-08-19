@@ -15,14 +15,11 @@ export default function ComparisonPage() {
     const loadComparisonData = async () => {
       try {
         setIsLoading(true);
-        console.log('开始加载压缩结果');
+
         
         // 直接从主进程获取最近处理的图片
-        console.log('从stats API获取最近处理的图片');
         if (window.stats) {
-          console.log('调用window.stats.getRecentImages(5)');
           const recentImages = await window.stats.getRecentImages(5);
-          console.log('获取到最近处理的图片:', recentImages);
           
           if (recentImages && recentImages.success && recentImages.images && recentImages.images.length > 0) {
             // 将 ProcessedImage 转换为 CompressionResult 格式
@@ -38,18 +35,18 @@ export default function ComparisonPage() {
               outputFormat: img.format
             }));
             
-            console.log('转换后的结果:', convertedResults);
+
             setResults(convertedResults);
           } else {
-            console.error('没有找到可用的压缩结果', recentImages);
+
             setError('没有找到可用的压缩结果，请先压缩图片');
           }
         } else {
-          console.error('window.stats API不可用');
+
           setError('无法访问统计数据 API');
         }
       } catch (err) {
-        console.error('加载压缩结果失败:', err);
+
         setError(`加载压缩结果失败: ${err instanceof Error ? err.message : '未知错误'}`);
       } finally {
         setIsLoading(false);
@@ -96,4 +93,4 @@ export default function ComparisonPage() {
       <ComparisonView results={results} onRecompress={handleRecompress} />
     </div>
   );
-} 
+}

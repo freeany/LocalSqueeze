@@ -103,7 +103,7 @@ export async function compressWebp(
       height: outputMetadata.height || 0
     };
   } catch (error) {
-    console.error('WebP压缩失败:', error);
+
     return {
       success: false,
       originalPath: inputPath,
@@ -196,4 +196,4 @@ export function getHighCompressionWebpSettings(): WebpCompressionSettings {
     smartSubsample: true,
     effort: 2
   };
-} 
+}

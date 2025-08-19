@@ -54,7 +54,7 @@ export default function CompressionSettings() {
         
         // 从配置文件加载上次的设置
         const settings = await getCompressionSettings();
-        console.log('CompressionSettings组件加载设置:', settings);
+
         
         // 应用保存的设置
         setActivePreset(settings.preset || '低压缩');
@@ -78,7 +78,7 @@ export default function CompressionSettings() {
         // 确保输出格式正确设置，即使keepFormat为true
         if (settings.outputFormat) {
           setOutputFormat(settings.outputFormat.toUpperCase());
-          console.log(`加载设置，输出格式: ${settings.outputFormat.toUpperCase()}, 保持原始格式: ${keepFormatValue}`);
+
         } else {
           setOutputFormat('PNG');
         }
@@ -90,7 +90,7 @@ export default function CompressionSettings() {
         
         setIsLoading(false);
       } catch (error) {
-        console.error('加载压缩设置失败:', error);
+
         setIsLoading(false);
         
         // 如果加载失败，使用默认设置
@@ -127,14 +127,14 @@ export default function CompressionSettings() {
     if (!settings.keepFormat && settings.outputFormat) {
       // 在UI中显示大写的格式名称
       setOutputFormat(settings.outputFormat.toUpperCase());
-      console.log(`设置输出格式为: ${settings.outputFormat.toUpperCase()}`);
+
     }
   };
 
   // 处理预设点击
   const handlePresetClick = async (preset: string) => {
     try {
-      console.log('选择预设:', preset);
+
       
       // 设置活动预设
       setActivePreset(preset);
@@ -198,7 +198,7 @@ export default function CompressionSettings() {
         fileNaming
       };
       
-      console.log('直接保存预设设置:', settings);
+
       await saveCompressionSettings(settings);
       
     } catch (error) {
@@ -332,7 +332,7 @@ export default function CompressionSettings() {
   const handleOutputFormatChange = (format: string) => {
     // 在UI中显示大写格式
     setOutputFormat(format.toUpperCase());
-    console.log(`输出格式变更为: ${format.toUpperCase()} (保存为小写)`);
+
     
     // 确保设置keepFormat为false，允许选择输出格式
     setKeepFormat(false);
@@ -356,7 +356,7 @@ export default function CompressionSettings() {
       fileNaming
     };
     
-    console.log('保存输出格式设置:', settings);
+
     saveCompressionSettings(settings).then(() => {
       // 保存成功后更新预览
       generatePreview();
@@ -365,9 +365,7 @@ export default function CompressionSettings() {
   
   // 处理文件命名变化
   const handleFileNamingChange = (value: string) => {
-    console.log('文件命名变更前:', fileNaming);
     setFileNaming(value);
-    console.log('文件命名变更后:', value);
     
     // 文件命名不应该影响预设类型，所以不再切换到自定义预设
     // 直接保存设置，不使用setTimeout延迟
@@ -387,7 +385,7 @@ export default function CompressionSettings() {
       fileNaming: value // 使用传入的新值
     };
     
-    console.log('保存文件命名设置:', value);
+
     saveCompressionSettings(settings);
   };
   
@@ -421,10 +419,7 @@ export default function CompressionSettings() {
   const saveCurrentSettings = async () => {
     try {
       // 获取当前最新状态
-      console.log('当前预设:', activePreset);
-      console.log('当前输出格式:', outputFormat);
-      console.log('当前保持原始格式:', keepFormat);
-      console.log('当前文件命名设置:', fileNaming);
+
       
       // 构建设置对象
       const settings = {
@@ -442,10 +437,7 @@ export default function CompressionSettings() {
         fileNaming
       };
       
-      console.log('保存设置到配置文件，输出格式:', settings.outputFormat);
-      
       // 直接保存设置，不再进行额外检查
-      console.log('最终保存的设置:', settings);
       await saveCompressionSettings(settings);
     } catch (error) {
       console.error('保存设置失败:', error);
@@ -496,7 +488,7 @@ export default function CompressionSettings() {
           return false;
       }
     } catch (error) {
-      console.error('检查自定义设置失败:', error);
+
       return false;
     }
   };

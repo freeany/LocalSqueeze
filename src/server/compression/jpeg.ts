@@ -104,7 +104,7 @@ export async function compressJpeg(
       height: outputMetadata.height || 0
     };
   } catch (error) {
-    console.error('JPEG压缩失败:', error);
+
     return {
       success: false,
       originalPath: inputPath,
@@ -173,4 +173,4 @@ export function getHighCompressionJpegSettings(): JpegCompressionSettings {
     overshootDeringing: true,
     optimizeScans: true
   };
-} 
+}

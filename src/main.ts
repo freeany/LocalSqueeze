@@ -151,23 +151,19 @@ app.on('ready', async () => {
   // 注册读取图片为Data URL的处理程序（必须在initAllHandlers之后）
   ipcMain.handle('get-image-data-url', async (_, filePath) => {
     try {
-      console.log('=== NEW HANDLER ===');
-      console.log('正在尝试加载图片:', filePath);
-      console.log('文件是否存在:', existsSync(filePath));
-      console.log('=== NEW HANDLER ===');
+
       
       // 检查文件是否存在
       if (!existsSync(filePath)) {
-        console.log('文件不存在，返回默认图片');
+
         return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptLTIgMTVsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiIGZpbGw9IiM5OTkiLz48L3N2Zz4=';
       }
       
-      console.log('文件存在，继续处理...');
+
 
       // 读取文件
-      console.log('开始读取文件:', filePath);
       const data = await fs.readFile(filePath);
-      console.log('文件读取成功，大小:', data.length, '字节');
+
 
       // 检测文件类型
       let mimeType = 'image/png'; // 默认MIME类型
@@ -178,15 +174,13 @@ app.on('ready', async () => {
       } else if (filePath.endsWith('.gif')) {
         mimeType = 'image/gif';
       }
-      console.log('检测到的MIME类型:', mimeType);
+
 
       // 转换为Base64
       const base64Data = data.toString('base64');
-      console.log('Base64转换成功，长度:', base64Data.length);
 
       // 返回Data URL
       const dataUrl = `data:${mimeType};base64,${base64Data}`;
-      console.log('返回Data URL，前50个字符:', dataUrl.substring(0, 50));
       return dataUrl;
     } catch (error) {
       console.error('加载图片时发生错误:', error);

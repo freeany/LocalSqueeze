@@ -96,7 +96,7 @@ export function initCompressionHandlers() {
       switch (fileExtension) {
         case 'jpg':
         case 'jpeg':
-          console.log(`[IPC] 使用JPEG专用压缩方法`);
+
           result = await compressJpeg(imagePath, outputPath, {
             ...getDefaultJpegSettings(),
             ...settings
@@ -322,17 +322,17 @@ export function initCompressionHandlers() {
       // 检查文件是否存在
       const exists = await fs.access(filePath).then(() => true).catch(() => false);
       if (!exists) {
-        console.log(`临时文件不存在，跳过删除: ${filePath}`);
+
         return { success: true };
       }
       
       // 删除文件
       await fs.unlink(filePath);
-      console.log(`已删除临时文件: ${filePath}`);
+
       
       return { success: true };
     } catch (error) {
-      console.error(`删除临时文件失败: ${filePath}`, error);
+
       return {
         success: false,
         error: error instanceof Error ? error.message : '未知错误'

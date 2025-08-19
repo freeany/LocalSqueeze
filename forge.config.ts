@@ -103,7 +103,6 @@ const config: ForgeConfig = {
           onRateLimit: (retryAfter: number, options: any) => {
             console.warn(`Request quota exhausted for request ${options.method} ${options.url}`);
             if (options.request.retryCount === 0) {
-              console.log(`Retrying after ${retryAfter} seconds!`);
               return true;
             }
           },

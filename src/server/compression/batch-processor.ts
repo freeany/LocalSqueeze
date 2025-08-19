@@ -49,8 +49,7 @@ export class BatchProcessor {
   addTask(inputPath: string, outputPath: string, settings: CompressionSettings): Promise<CompressionResult> {
     this.total++;
     
-    console.log(`[批量处理] 添加任务 #${this.total}: ${inputPath} -> ${outputPath}`);
-    console.log(`[批量处理] 任务 #${this.total} 压缩参数:`, JSON.stringify(settings, null, 2));
+
     
     return new Promise<CompressionResult>((resolve, reject) => {
       this.queue.push({
@@ -71,7 +70,7 @@ export class BatchProcessor {
    */
   onProgress(callback: (current: number, total: number, result?: CompressionResult) => void): void {
     this.onProgressCallback = callback;
-    console.log(`[批量处理] 设置进度回调函数`);
+
   }
   
   /**
@@ -80,17 +79,17 @@ export class BatchProcessor {
    */
   async waitForAll(): Promise<CompressionResult[]> {
     if (this.queue.length === 0 && this.activeWorkers === 0) {
-      console.log(`[批量处理] 所有任务已完成，共 ${this.results.length} 个结果`);
+
       return this.results;
     }
     
-    console.log(`[批量处理] 等待所有任务完成，队列中还有 ${this.queue.length} 个任务，活动工作线程 ${this.activeWorkers} 个`);
+
     
     return new Promise<CompressionResult[]>((resolve) => {
       const checkInterval = setInterval(() => {
         if (this.queue.length === 0 && this.activeWorkers === 0) {
           clearInterval(checkInterval);
-          console.log(`[批量处理] 所有任务已完成，共 ${this.results.length} 个结果`);
+
           resolve(this.results);
         }
       }, 100);
@@ -109,7 +108,7 @@ export class BatchProcessor {
     if (!task) return;
     
     this.activeWorkers++;
-    console.log(`[批量处理] 开始处理任务: ${task.inputPath}, 活动工作线程: ${this.activeWorkers}/${this.maxWorkers}`);
+
     
     // 创建工作线程
     const worker = new Worker(path.join(__dirname, '../workers/compression-worker.js'), {
@@ -128,7 +127,7 @@ export class BatchProcessor {
         const result = message.result as CompressionResult;
         this.results.push(result);
         
-        console.log(`[批量处理] 任务完成 (${this.completed}/${this.total}): ${task.inputPath}, 压缩率: ${result.compressionRate}`);
+
         
         // 调用进度回调
         if (this.onProgressCallback) {
@@ -140,7 +139,7 @@ export class BatchProcessor {
         this.completed++;
         const error = new Error(message.error || '压缩失败');
         
-        console.error(`[批量处理] 任务失败 (${this.completed}/${this.total}): ${task.inputPath}, 错误: ${message.error}`);
+
         
         // 创建错误结果
         const errorResult: CompressionResult = {
@@ -203,7 +202,7 @@ export class BatchProcessor {
     worker.on('exit', (code) => {
       this.activeWorkers--;
       
-      console.log(`[批量处理] 工作线程退出 (代码: ${code}), 剩余活动工作线程: ${this.activeWorkers}`);
+
       
       // 继续处理队列
       this.processQueue();
